@@ -131,6 +131,20 @@ npm run deploy -- ./dist
 - Optionally deletes files on the server that no longer exist locally
 - Updates `.sync/manifest.json` to match the server after deploy
 
+#### Fast Mode
+
+For faster deployments (with slightly lower accuracy), use the `--fast` flag:
+
+```bash
+npm run deploy -- --fast
+```
+
+**Fast mode:**
+- Skips SHA-256 hashing
+- Compares only file size and modification time (mtime)
+- Significantly faster for large codebases
+- May miss changes if file size and mtime are unchanged
+
 ---
 
 ## 🗑️ Deleting Remote Files
@@ -210,6 +224,12 @@ npm run deploy
 
 # 5. Deploy with deletion of removed files
 npm run deploy -- --delete
+
+# 6. Fast deploy (skip hashing, use size+mtime comparison)
+npm run deploy -- --fast
+
+# 7. Combine flags
+npm run deploy -- --fast --delete
 ```
 
 ---

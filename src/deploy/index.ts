@@ -21,6 +21,7 @@ export interface DeployOptions {
   password?: string;
   remoteDir: string;
   deleteExtra?: boolean;
+  fast?: boolean;
 }
 
 export async function deploy(options: DeployOptions) {
@@ -34,17 +35,18 @@ export async function deploy(options: DeployOptions) {
     password,
     remoteDir,
     deleteExtra = false,
+    fast = false,
   } = options;
 
   const localRoot = path.resolve(localDir);
 
-  console.log(`Scanning local directory: ${localRoot}`);
-  const nextManifest = await scanDirectory(localRoot);
+  console.log(`Scanning local directory: ${localRoot}${fast ? ' (fast mode)' : ''}`);
+  const nextManifest = await scanDirectory(localRoot, fast);
 
   console.log(`Loading previous manifest from: ${manifestPath}`);
   const prevManifest = await loadManifest(manifestPath);
 
-  const { toUpload, toDelete } = computeDiff(prevManifest, nextManifest);
+  const { toUpload, toDelete } = computeDiff(prevManifest, nextManifest, fast);
 
   console.log(
     `Files to upload: ${toUpload.length}, files to delete: ${

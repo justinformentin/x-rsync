@@ -9,7 +9,7 @@ function printHelp() {
   console.log(`
 Usage:
   sftp-sync sync
-  sftp-sync deploy <localDir> [--delete]
+  sftp-sync deploy <localDir> [--delete] [--fast]
 
 Environment variables for BOTH sync and deploy:
   DEPLOY_HOST         Required. e.g. "your.server.ip"
@@ -21,6 +21,10 @@ Environment variables for BOTH sync and deploy:
 
 Additional for deploy:
   DEPLOY_DELETE       "1" to delete files on remote that no longer exist locally
+
+Flags:
+  --delete            Delete remote files that don't exist locally
+  --fast              Skip hashing, compare only size and mtime (faster but less accurate)
 `);
 }
 
@@ -73,7 +77,8 @@ async function main() {
   if (command === 'deploy') {
     const localDir = args[1] || '.';
     const deleteExtra = args.includes('--delete') || env.DEPLOY_DELETE === '1';
-    await deploy({ ...params, localDir, deleteExtra });
+    const fast = args.includes('--fast');
+    await deploy({ ...params, localDir, deleteExtra, fast });
     return;
   }
 

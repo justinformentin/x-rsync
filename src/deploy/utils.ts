@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import SFTPClient from 'ssh2-sftp-client';
 import { Manifest, FileEntry } from '../types';
 
-export function computeDiff(prev: Manifest | null, next: Manifest) {
+export function computeDiff(prev: Manifest | null, next: Manifest, fast: boolean = false) {
   const toUpload: string[] = [];
   const toDelete: string[] = [];
 
@@ -14,8 +14,19 @@ export function computeDiff(prev: Manifest | null, next: Manifest) {
   // New or changed
   for (const [relPath, entry] of Object.entries(nextFiles)) {
     const prevEntry = prevFiles[relPath];
-    if (!prevEntry || prevEntry.hash !== entry.hash) {
+    if (!prevEntry) {
+      // New file
       toUpload.push(relPath);
+    } else if (fast) {
+      // Fast mode: compare size and mtime only
+      if (prevEntry.size !== entry.size || prevEntry.mtimeMs !== entry.mtimeMs) {
+        toUpload.push(relPath);
+      }
+    } else {
+      // Normal mode: compare hash
+      if (prevEntry.hash !== entry.hash) {
+        toUpload.push(relPath);
+      }
     }
   }
 
@@ -57,7 +68,7 @@ export async function hashFile(filePath: string): Promise<string> {
   });
 }
 
-export async function scanDirectory(root: string): Promise<Manifest> {
+export async function scanDirectory(root: string, fast: boolean = false): Promise<Manifest> {
   const files: Record<string, FileEntry> = {};
   const rootAbs = path.resolve(root);
 
@@ -70,7 +81,9 @@ export async function scanDirectory(root: string): Promise<Manifest> {
         await walk(fullPath);
       } else if (entry.isFile()) {
         const stat = await fs.promises.stat(fullPath);
-        const hash = await hashFile(fullPath);
+
+        // In fast mode, use a placeholder hash to skip expensive hashing
+        const hash = fast ? '' : await hashFile(fullPath);
 
         // Path relative to root, always POSIX-style
         const rel = path.relative(rootAbs, fullPath).split(path.sep).join('/');
