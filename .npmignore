@@ -1,0 +1,21 @@
+# Source files
+src/
+tsconfig.json
+
+# Development files
+.env
+.env.*
+xsync.config.js
+xsync.config.ts
+.sync/
+
+# Testing
+testing/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.log
+node_modules/

@@ -1,22 +1,48 @@
 {
   "name": "x-sync",
   "version": "0.1.0",
-  "type": "module",
-  "main": "dist/cli.js",
-  "bin": {
-    "x-sync": "dist/cli.js"
+  "description": "A tiny rsync-style deployment tool using SFTP + SHA-256 diffing. Deploy only changed files to remote servers.",
+  "keywords": ["sftp", "deploy", "sync", "rsync", "ssh", "deployment", "file-sync"],
+  "author": "Justin Formentin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/justinformentin/x-sync"
   },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "x-sync": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs --external:cpu-features --external:*.node"
+    "build": "npm run build:tsc && npm run build:cjs",
+    "build:tsc": "tsc",
+    "build:cjs": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.cjs --external:ssh2-sftp-client --external:dotenv --external:cli-progress && esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs --external:ssh2-sftp-client --external:dotenv --external:cli-progress",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "ssh2-sftp-client": "^10.0.0"
+    "ssh2-sftp-client": "^10.0.0",
+    "cli-progress": "^3.12.0",
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/ssh2-sftp-client": "^9.0.6",
-    "cli-progress": "^3.12.0",
-    "dotenv": "^17.2.3",
     "esbuild": "^0.27.0",
     "typescript": "^5.6.0"
   }
