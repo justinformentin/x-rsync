@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import path from 'path';
-import { sync } from './sync.js';
-import { deploy } from './deploy.js';
+import { sync } from './sync';
+import { deploy } from './deploy';
 
 function printHelp() {
   console.log(`
