@@ -8,6 +8,8 @@ import {
   computeDiff,
   ensureRemoteDir,
 } from './utils';
+// @ts-ignore
+import cliProgress from 'cli-progress';
 
 export interface DeployOptions {
   localDir: string;
@@ -70,21 +72,28 @@ export async function deploy(options: DeployOptions) {
   await sftp.connect(connectConfig);
   console.log('Connected.');
 
+  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+
+  const barMax = toUpload.length + (toDelete.length || 0);
+
+  bar.start(barMax, 0);
+
   try {
     for (const rel of toUpload) {
       const localPath = path.join(localRoot, rel);
       const remotePath = `${remoteDir}/${rel}`.replace(/\\/g, '/');
       const remoteDirPath = remotePath.split('/').slice(0, -1).join('/');
 
-      console.log(`Uploading ${rel}`);
+      //   console.log(`Uploading ${rel}`);
       await ensureRemoteDir(sftp, remoteDirPath);
       await sftp.fastPut(localPath, remotePath);
+      bar.increment();
     }
 
     if (deleteExtra) {
       for (const rel of toDelete) {
         const remotePath = `${remoteDir}/${rel}`.replace(/\\/g, '/');
-        console.log(`Deleting remote ${rel}`);
+        // console.log(`Deleting remote ${rel}`);
         try {
           await sftp.delete(remotePath);
         } catch (err) {
@@ -93,10 +102,12 @@ export async function deploy(options: DeployOptions) {
             (err as Error).message
           );
         }
+        bar.increment();
       }
       // Note: removing empty remote directories is more work; you can add it later if you want.
     }
   } finally {
+    bar.stop();
     await sftp.end();
     console.log('Disconnected.');
   }
