@@ -2,6 +2,8 @@
 import path from 'path';
 import { sync } from './sync';
 import { deploy } from './deploy';
+import "dotenv/config";
+
 
 function printHelp() {
   console.log(`
@@ -24,7 +26,6 @@ Additional for deploy:
 
 async function main() {
   const args = process.argv.slice(2);
-
   if (args.length === 0 || ['-h', '--help'].includes(args[0])) {
     printHelp();
     process.exit(0);

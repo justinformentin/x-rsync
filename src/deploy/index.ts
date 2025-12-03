@@ -60,7 +60,6 @@ export async function deploy(options: DeployOptions) {
 
   if (privateKeyPath) {
     connectConfig.privateKey = fs.readFileSync(privateKeyPath);
-    console.log('connectConfig.privateKey', connectConfig.privateKey);
   } else if (password) {
     connectConfig.password = password;
   } else {
