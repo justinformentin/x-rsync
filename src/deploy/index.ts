@@ -22,6 +22,7 @@ export interface DeployOptions {
   remoteDir: string;
   deleteExtra?: boolean;
   fast?: boolean;
+  dry?: boolean;
 }
 
 export async function deploy(options: DeployOptions) {
@@ -36,11 +37,12 @@ export async function deploy(options: DeployOptions) {
     remoteDir,
     deleteExtra = false,
     fast = false,
+    dry = false,
   } = options;
 
   const localRoot = path.resolve(localDir);
 
-  console.log(`Scanning local directory: ${localRoot}${fast ? ' (fast mode)' : ''}`);
+  console.log(`Scanning local directory: ${localRoot}${fast ? ' (fast mode)' : ''}${dry ? ' (dry run)' : ''}`);
   const nextManifest = await scanDirectory(localRoot, fast);
 
   console.log(`Loading previous manifest from: ${manifestPath}`);
@@ -54,6 +56,11 @@ export async function deploy(options: DeployOptions) {
     }`
   );
 
+  if (dry) {
+    console.log('No changes made (dry run).');
+    return;
+  }
+
   const sftp = new SFTPClient();
 
   const connectConfig: any = {
@@ -63,7 +70,7 @@ export async function deploy(options: DeployOptions) {
   };
 
   if (privateKeyPath) {
-    connectConfig.privateKey = fs.readFileSync(privateKeyPath);
+    connectConfig.privateKeyPath = fs.readFileSync(privateKeyPath);
   } else if (password) {
     connectConfig.password = password;
   } else {

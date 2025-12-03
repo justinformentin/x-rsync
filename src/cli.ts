@@ -2,29 +2,42 @@
 import path from 'path';
 import { sync } from './sync';
 import { deploy } from './deploy';
+import { loadConfig, mergeConfig } from './config';
 import "dotenv/config";
 
 
 function printHelp() {
   console.log(`
 Usage:
-  sftp-sync sync
-  sftp-sync deploy <localDir> [--delete] [--fast]
+  x-sync sync
+  x-sync deploy <localDir> [--delete] [--fast] [--dry]
 
-Environment variables for BOTH sync and deploy:
+Configuration:
+  Create xsync.config.js or xsync.config.ts in your project root with:
+  {
+    host: "your.server.ip",
+    user: "root",
+    port: 22,
+    remoteDir: "/var/www/website",
+    privateKeyPath: "path/to/key",
+    password: "password",
+    delete: false,
+    fast: false
+  }
+
+Environment variables (override config file):
   DEPLOY_HOST         Required. e.g. "your.server.ip"
   DEPLOY_USER         Required. e.g. "root"
   DEPLOY_PORT         Optional. default 22
   DEPLOY_REMOTE_DIR   Required. e.g. "/var/www/website"
-  DEPLOY_PRIVATE_KEY  Path to private key (recommended)
+  DEPLOY_PRIVATE_KEY_PATH  Path to private key (recommended)
   DEPLOY_PASSWORD     Password (alternative to key)
-
-Additional for deploy:
   DEPLOY_DELETE       "1" to delete files on remote that no longer exist locally
 
 Flags:
   --delete            Delete remote files that don't exist locally
   --fast              Skip hashing, compare only size and mtime (faster but less accurate)
+  --dry               Dry run mode - show what would be changed without actually uploading/deleting
 `);
 }
 
@@ -35,24 +48,24 @@ async function main() {
     process.exit(0);
   }
 
-  const env = process.env;
-  const host = env.DEPLOY_HOST;
-  const username = env.DEPLOY_USER;
-  const remoteDir = env.DEPLOY_REMOTE_DIR;
-  const port = env.DEPLOY_PORT ? parseInt(env.DEPLOY_PORT, 10) : 22;
-  const privateKeyPath = env.DEPLOY_PRIVATE_KEY;
-  const password = env.DEPLOY_PASSWORD;
+  // Load config file
+  const configFile = await loadConfig();
+
+  // Merge config file with environment variables (env vars take priority)
+  const config = mergeConfig(configFile);
+
+  const { host, username, remoteDir, port, privateKeyPath, password } = config;
 
   if (!host || !username || !remoteDir) {
     console.error(
-      'Missing required env vars for sync: DEPLOY_HOST, DEPLOY_USER, DEPLOY_REMOTE_DIR'
+      'Missing required configuration: host, user, and remoteDir must be set via config file or environment variables (DEPLOY_HOST, DEPLOY_USER, DEPLOY_REMOTE_DIR)'
     );
     process.exit(1);
   }
 
   if (!privateKeyPath && !password) {
     console.error(
-      'You must set either DEPLOY_PRIVATE_KEY or DEPLOY_PASSWORD for sync'
+      'You must set either privateKeyPath or password via config file or environment variables (DEPLOY_PRIVATE_KEY_PATH or DEPLOY_PASSWORD)'
     );
     process.exit(1);
   }
@@ -76,9 +89,10 @@ async function main() {
 
   if (command === 'deploy') {
     const localDir = args[1] || '.';
-    const deleteExtra = args.includes('--delete') || env.DEPLOY_DELETE === '1';
-    const fast = args.includes('--fast');
-    await deploy({ ...params, localDir, deleteExtra, fast });
+    const deleteExtra = args.includes('--delete') || config?.delete === true;
+    const fast = args.includes('--fast') || config?.fast === true;
+    const dry = args.includes('--dry');
+    await deploy({ ...params, localDir, deleteExtra, fast, dry });
     return;
   }
 
