@@ -28,7 +28,7 @@ export interface DeployOptions {
 export async function deploy(options: DeployOptions) {
   const {
     localDir,
-    manifestPath = path.resolve(process.cwd(), '.sync', 'manifest.json'),
+    manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
     host,
     port = 22,
     username,

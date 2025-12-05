@@ -6,7 +6,7 @@ import { loadManifest, scanDirectory, computeDiff, ensureRemoteDir, } from './ut
 // @ts-ignore
 import cliProgress from 'cli-progress';
 export async function deploy(options) {
-    const { localDir, manifestPath = path.resolve(process.cwd(), '.sync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, remoteDir, deleteExtra = false, fast = false, dry = false, } = options;
+    const { localDir, manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, remoteDir, deleteExtra = false, fast = false, dry = false, } = options;
     const localRoot = path.resolve(localDir);
     console.log(`Scanning local directory: ${localRoot}${fast ? ' (fast mode)' : ''}${dry ? ' (dry run)' : ''}`);
     const nextManifest = await scanDirectory(localRoot, fast);

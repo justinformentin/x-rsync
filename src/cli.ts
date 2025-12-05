@@ -3,8 +3,6 @@ import path from 'path';
 import { sync } from './sync';
 import { deploy } from './deploy';
 import { loadConfig, mergeConfig } from './config';
-import "dotenv/config";
-
 
 function printHelp() {
   console.log(`
@@ -82,7 +80,7 @@ async function main() {
   };
 
   if (command === 'sync') {
-    const manifestPath = path.resolve(process.cwd(), '.sync', 'manifest.json');
+    const manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json');
     await sync({ ...params, manifestPath });
     return;
   }

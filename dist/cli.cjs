@@ -82,7 +82,7 @@ async function scanRemoteDirectory(sftp, baseRemoteDir) {
 // src/sync/index.ts
 async function sync(options) {
   const {
-    manifestPath = import_path2.default.resolve(process.cwd(), ".sync", "manifest.json"),
+    manifestPath = import_path2.default.resolve(process.cwd(), ".xsync", "manifest.json"),
     host,
     port = 22,
     username,
@@ -230,7 +230,7 @@ var import_cli_progress = __toESM(require("cli-progress"), 1);
 async function deploy(options) {
   const {
     localDir,
-    manifestPath = import_path4.default.resolve(process.cwd(), ".sync", "manifest.json"),
+    manifestPath = import_path4.default.resolve(process.cwd(), ".xsync", "manifest.json"),
     host,
     port = 22,
     username,
@@ -347,7 +347,6 @@ function mergeConfig(configFile) {
 }
 
 // src/cli.ts
-var import_config3 = require("dotenv/config");
 function printHelp() {
   console.log(`
 Usage:
@@ -413,7 +412,7 @@ async function main() {
     remoteDir
   };
   if (command === "sync") {
-    const manifestPath = import_path6.default.resolve(process.cwd(), ".sync", "manifest.json");
+    const manifestPath = import_path6.default.resolve(process.cwd(), ".xsync", "manifest.json");
     await sync({ ...params, manifestPath });
     return;
   }

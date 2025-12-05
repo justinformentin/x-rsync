@@ -93,7 +93,7 @@ async function scanRemoteDirectory(sftp, baseRemoteDir) {
 // src/sync/index.ts
 async function sync(options) {
   const {
-    manifestPath = import_path2.default.resolve(process.cwd(), ".sync", "manifest.json"),
+    manifestPath = import_path2.default.resolve(process.cwd(), ".xsync", "manifest.json"),
     host,
     port = 22,
     username,
@@ -241,7 +241,7 @@ var import_cli_progress = __toESM(require("cli-progress"), 1);
 async function deploy(options) {
   const {
     localDir,
-    manifestPath = import_path4.default.resolve(process.cwd(), ".sync", "manifest.json"),
+    manifestPath = import_path4.default.resolve(process.cwd(), ".xsync", "manifest.json"),
     host,
     port = 22,
     username,

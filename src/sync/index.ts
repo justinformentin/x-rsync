@@ -17,7 +17,7 @@ export interface SyncOptions {
 
 export async function sync(options: SyncOptions) {
   const {
-    manifestPath = path.resolve(process.cwd(), '.sync', 'manifest.json'),
+    manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
     host,
     port = 22,
     username,

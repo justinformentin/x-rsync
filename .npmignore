@@ -7,7 +7,7 @@ tsconfig.json
 .env.*
 xsync.config.js
 xsync.config.ts
-.sync/
+.xsync/
 
 # Testing
 testing/

@@ -5,7 +5,7 @@ import SFTPClient from 'ssh2-sftp-client';
 import { saveManifest } from '../shared';
 import { scanRemoteDirectory } from './utils';
 export async function sync(options) {
-    const { manifestPath = path.resolve(process.cwd(), '.sync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, remoteDir, } = options;
+    const { manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, remoteDir, } = options;
     const sftp = new SFTPClient();
     const connectConfig = {
         host,
