@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import SFTPClient from 'ssh2-sftp-client';
-import { Manifest, FileEntry } from '../types';
+import { Manifest, FileEntry } from '../types.js';
 
 export function computeDiff(prev: Manifest | null, next: Manifest, fast: boolean = false) {
   const toUpload: string[] = [];

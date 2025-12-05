@@ -1,6 +1,6 @@
 {
   "name": "x-sync",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A tiny rsync-style deployment tool using SFTP + SHA-256 diffing. Deploy only changed files to remote servers.",
   "keywords": ["sftp", "deploy", "sync", "rsync", "ssh", "deployment", "file-sync"],
   "author": "Justin Formentin",
@@ -32,11 +32,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run build:clean && npm run build:tsc && npm run build:cjs && npm run build:post",
-    "build:clean": "rm -rf dist || true",
-    "build:tsc": "tsc",
-    "build:cjs": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.cjs --external:ssh2-sftp-client --external:dotenv --external:cli-progress && esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs --external:ssh2-sftp-client --external:dotenv --external:cli-progress",
-    "build:post": "node scripts/post-build.js",
+    "build": "node scripts/build.js",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

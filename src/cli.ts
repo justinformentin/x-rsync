@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import path from 'path';
-import { sync } from './sync';
-import { deploy } from './deploy';
-import { loadConfig, mergeConfig } from './config';
+import { sync } from './sync/index.js';
+import { deploy } from './deploy/index.js';
+import { loadConfig, mergeConfig } from './config.js';
 
 function printHelp() {
   console.log(`
