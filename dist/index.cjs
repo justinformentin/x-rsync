@@ -39,10 +39,8 @@ module.exports = __toCommonJS(index_exports);
 
 // src/sync/index.ts
 var import_path2 = __toESM(require("path"), 1);
-var import_fs2 = __toESM(require("fs"), 1);
-var import_ssh2_sftp_client = __toESM(require("ssh2-sftp-client"), 1);
 
-// src/shared.ts
+// src/save-manifest.ts
 var import_fs = __toESM(require("fs"), 1);
 var import_path = __toESM(require("path"), 1);
 async function saveManifest(filePath, manifest) {
@@ -90,17 +88,16 @@ async function scanRemoteDirectory(sftp, baseRemoteDir) {
   };
 }
 
-// src/sync/index.ts
-async function sync(options) {
-  const {
-    manifestPath = import_path2.default.resolve(process.cwd(), ".xsync", "manifest.json"),
-    host,
-    port = 22,
-    username,
-    privateKeyPath,
-    password,
-    remoteDir
-  } = options;
+// src/init-sftp.ts
+var import_fs2 = __toESM(require("fs"), 1);
+var import_ssh2_sftp_client = __toESM(require("ssh2-sftp-client"), 1);
+async function initSftp({
+  host,
+  port,
+  username,
+  privateKeyPath,
+  password
+}) {
   const sftp = new import_ssh2_sftp_client.default();
   const connectConfig = {
     host,
@@ -123,11 +120,30 @@ and point DEPLOY_PRIVATE_KEY_PATH at that file instead.`
   } else {
     throw new Error("Either privateKeyPath or password must be provided");
   }
-  console.log(
-    `Sync: connecting to ${username}@${host}:${port}, scanning ${remoteDir}`
-  );
+  console.log(`Connecting to ${username}@${host}:${port}...`);
   await sftp.connect(connectConfig);
-  console.log("Sync: connected.");
+  console.log("Connected.");
+  return sftp;
+}
+
+// src/sync/index.ts
+async function sync(options) {
+  const {
+    manifestPath = import_path2.default.resolve(process.cwd(), ".xsync", "manifest.json"),
+    host,
+    port = 22,
+    username,
+    privateKeyPath,
+    password,
+    remoteDir
+  } = options;
+  const sftp = await initSftp({
+    host,
+    port,
+    username,
+    privateKeyPath,
+    password
+  });
   try {
     const manifest = await scanRemoteDirectory(sftp, remoteDir);
     console.log(
@@ -142,9 +158,7 @@ and point DEPLOY_PRIVATE_KEY_PATH at that file instead.`
 }
 
 // src/deploy/index.ts
-var import_fs4 = __toESM(require("fs"), 1);
 var import_path4 = __toESM(require("path"), 1);
-var import_ssh2_sftp_client2 = __toESM(require("ssh2-sftp-client"), 1);
 
 // src/deploy/utils.ts
 var import_fs3 = __toESM(require("fs"), 1);
@@ -253,7 +267,9 @@ async function deploy(options) {
     dry = false
   } = options;
   const localRoot = import_path4.default.resolve(localDir);
-  console.log(`Scanning local directory: ${localRoot}${fast ? " (fast mode)" : ""}${dry ? " (dry run)" : ""}`);
+  console.log(
+    `Scanning local directory: ${localRoot}${fast ? " (fast mode)" : ""}${dry ? " (dry run)" : ""}`
+  );
   const nextManifest = await scanDirectory(localRoot, fast);
   console.log(`Loading previous manifest from: ${manifestPath}`);
   const prevManifest = await loadManifest(manifestPath);
@@ -265,22 +281,13 @@ async function deploy(options) {
     console.log("No changes made (dry run).");
     return;
   }
-  const sftp = new import_ssh2_sftp_client2.default();
-  const connectConfig = {
+  const sftp = await initSftp({
     host,
     port,
-    username
-  };
-  if (privateKeyPath) {
-    connectConfig.privateKeyPath = import_fs4.default.readFileSync(privateKeyPath);
-  } else if (password) {
-    connectConfig.password = password;
-  } else {
-    throw new Error("Either privateKeyPath or password must be provided");
-  }
-  console.log(`Connecting to ${username}@${host}:${port}...`);
-  await sftp.connect(connectConfig);
-  console.log("Connected.");
+    username,
+    privateKeyPath,
+    password
+  });
   const bar = new import_cli_progress.default.SingleBar({}, import_cli_progress.default.Presets.shades_classic);
   const barMax = toUpload.length + (toDelete.length || 0);
   bar.start(barMax, 0);
@@ -318,7 +325,7 @@ async function deploy(options) {
 }
 
 // src/config.ts
-var import_fs5 = __toESM(require("fs"), 1);
+var import_fs4 = __toESM(require("fs"), 1);
 var import_path5 = __toESM(require("path"), 1);
 var import_url = require("url");
 var import_config = require("dotenv/config");
@@ -330,7 +337,7 @@ async function loadConfig() {
   ];
   for (const configFile of configFiles) {
     const configPath = import_path5.default.join(cwd, configFile);
-    if (import_fs5.default.existsSync(configPath)) {
+    if (import_fs4.default.existsSync(configPath)) {
       try {
         const fileUrl = (0, import_url.pathToFileURL)(configPath).href;
         const module2 = await import(fileUrl);
