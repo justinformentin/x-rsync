@@ -1,13 +1,10 @@
 #!/usr/bin/env node
-import path from 'path';
-import { sync } from './sync/index.js';
 import { deploy } from './deploy/index.js';
 import { loadConfig, mergeConfig } from './config.js';
 
 function printHelp() {
   console.log(`
 Usage:
-  x-sync sync
   x-sync deploy <localDir> [--delete] [--fast] [--dry] [--exclude=<pattern>] [--include=<pattern>]
 
 Configuration:
@@ -84,12 +81,6 @@ async function main() {
     password,
     remoteDir,
   };
-
-  if (command === 'sync') {
-    const manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json');
-    await sync({ ...params, manifestPath });
-    return;
-  }
 
   if (command === 'deploy') {
     const localDir = args[1] || '.';

@@ -9,6 +9,7 @@ import {
 // @ts-ignore
 import cliProgress from 'cli-progress';
 import { initSftp } from '../init-sftp.js';
+import { scanRemoteDirectory } from '../sync/utils.js';
 
 export interface DeployOptions {
   localDir: string;
@@ -52,8 +53,20 @@ export async function deploy(options: DeployOptions) {
   );
   const nextManifest = await scanDirectory(localRoot, fast, exclude, include);
 
+  const sftp = await initSftp({
+    host,
+    port,
+    username,
+    privateKeyPath,
+    password,
+  });
+
   console.log(`Loading previous manifest from: ${manifestPath}`);
-  const prevManifest = await loadManifest(manifestPath);
+  let prevManifest = await loadManifest(manifestPath);
+  if (!prevManifest) {
+    prevManifest = await scanRemoteDirectory(sftp, remoteDir);
+    await saveManifest(manifestPath, prevManifest);
+  }
 
   const { toUpload, toDelete } = computeDiff(prevManifest, nextManifest, fast);
 
@@ -67,14 +80,6 @@ export async function deploy(options: DeployOptions) {
     console.log('No changes made (dry run).');
     return;
   }
-
-  const sftp = await initSftp({
-    host,
-    port,
-    username,
-    privateKeyPath,
-    password,
-  });
 
   const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 
