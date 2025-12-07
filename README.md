@@ -74,7 +74,17 @@ export default {
 
   // Optional settings:
   delete: false,  // set to true to delete remote files not present locally
-  fast: false     // set to true to skip hashing (compare size+mtime only)
+  fast: false,    // set to true to skip hashing (compare size+mtime only)
+
+  // Exclude/Include patterns (glob syntax):
+  exclude: [
+    "node_modules/**",
+    "config/**",
+    "*.log"
+  ],
+  include: [
+    "config/production.json"  // include this even if excluded by exclude patterns
+  ]
 };
 ```
 
@@ -88,7 +98,9 @@ export default {
   remoteDir: "/var/www/website",
   privateKeyPath: "~/.ssh/id_rsa",
   delete: false,
-  fast: false
+  fast: false,
+  exclude: ["node_modules/**", ".git/**"],
+  include: ["config/production.json"]
 };
 ```
 
@@ -119,6 +131,8 @@ DEPLOY_PASSWORD=your_password
 ```bash
 DEPLOY_PORT=22
 DEPLOY_DELETE=1   # enable deletes during deploy
+DEPLOY_EXCLUDE="node_modules/**,.git/**,*.log"  # comma-separated glob patterns
+DEPLOY_INCLUDE="config/production.json"  # comma-separated glob patterns
 ```
 
 ### Option 3: .env File
@@ -219,6 +233,57 @@ npm run deploy -- --dry
 - Does not connect to the server
 - Does not modify any files
 - Useful for testing before actual deployment
+
+#### Exclude/Include Patterns
+
+Control which files are deployed using glob patterns:
+
+**Via CLI flags:**
+```bash
+# Exclude files
+npm run deploy -- --exclude="node_modules/**" --exclude=".git/**"
+
+# Include files (overrides exclude)
+npm run deploy -- --exclude="config/*" --include="config/production.json"
+```
+
+**Via config file:**
+```javascript
+export default {
+  // ... other config
+  exclude: [
+    "node_modules/**",
+    ".git/**",
+    "*.log",
+    "test/**"
+  ],
+  include: [
+    "config/production.json",  // include this specific file
+    "assets/critical/**"        // include this directory even if excluded
+  ]
+};
+```
+
+**Via environment variables:**
+```bash
+DEPLOY_EXCLUDE="node_modules/**,.git/**,*.log"
+DEPLOY_INCLUDE="config/production.json"
+```
+
+**How it works:**
+- By default, all files are included
+- `exclude` patterns mark files to skip
+- `include` patterns override `exclude` - use this to include specific files that would otherwise be excluded
+- Example: `--exclude="config/*" --include="config/production.json"` excludes all config files except production.json
+- Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax
+- Patterns are matched against the relative file path from the local directory
+
+**Common patterns:**
+- `src/**/*.{js,ts}` all JS and TS files in src or src subdirectories
+- `**/*.log` - all .log files in any directory
+- `node_modules/**` - everything in node_modules
+- `*.tmp` - all .tmp files in root only
+- `test/**` - all files in test directory
 
 ---
 

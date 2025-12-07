@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import "dotenv/config";
+import 'dotenv/config';
 
 export interface XSyncConfig {
   host?: string;
@@ -12,6 +12,8 @@ export interface XSyncConfig {
   password?: string;
   delete?: boolean;
   fast?: boolean;
+  exclude?: string[];
+  include?: string[];
 }
 
 /**
@@ -22,10 +24,7 @@ export async function loadConfig(): Promise<XSyncConfig | null> {
   const cwd = process.cwd();
 
   // Try to find config file in order of preference
-  const configFiles = [
-    'xsync.config.ts',
-    'xsync.config.js',
-  ];
+  const configFiles = ['xsync.config.ts', 'xsync.config.js'];
 
   for (const configFile of configFiles) {
     const configPath = path.join(cwd, configFile);
@@ -42,7 +41,10 @@ export async function loadConfig(): Promise<XSyncConfig | null> {
 
         return config as XSyncConfig;
       } catch (err) {
-        console.warn(`Failed to load config from ${configFile}:`, (err as Error).message);
+        console.warn(
+          `Failed to load config from ${configFile}:`,
+          (err as Error).message
+        );
         // Continue to next config file
       }
     }
@@ -57,18 +59,25 @@ export async function loadConfig(): Promise<XSyncConfig | null> {
  * 2. Config file
  * 3. Defaults (lowest priority)
  */
-export function mergeConfig(
-  configFile: XSyncConfig | null,
-):XSyncConfig {
+export function mergeConfig(configFile: XSyncConfig | null): XSyncConfig {
   const env = process.env;
+
+  // Parse exclude/include from env vars (comma-separated)
+  const envExclude = env.DEPLOY_EXCLUDE?.split(',').map((s) => s.trim());
+  const envInclude = env.DEPLOY_INCLUDE?.split(',').map((s) => s.trim());
+
   return {
     host: env.DEPLOY_HOST || configFile?.host,
     username: env.DEPLOY_USER || configFile?.username,
-    port: env.DEPLOY_PORT ? parseInt(env.DEPLOY_PORT, 10) : configFile?.port || 22,
+    port: env.DEPLOY_PORT
+      ? parseInt(env.DEPLOY_PORT, 10)
+      : configFile?.port || 22,
     remoteDir: env.DEPLOY_REMOTE_DIR || configFile?.remoteDir,
     privateKeyPath: env.DEPLOY_PRIVATE_KEY_PATH || configFile?.privateKeyPath,
     password: env.DEPLOY_PASSWORD || configFile?.password,
     delete: !!process.env.DEPLOY_DELETE || configFile?.delete || false,
-    fast: configFile?.fast || false
+    fast: configFile?.fast || false,
+    exclude: envExclude || configFile?.exclude,
+    include: envInclude || configFile?.include,
   };
 }

@@ -8,7 +8,7 @@ function printHelp() {
   console.log(`
 Usage:
   x-sync sync
-  x-sync deploy <localDir> [--delete] [--fast] [--dry]
+  x-sync deploy <localDir> [--delete] [--fast] [--dry] [--exclude=<pattern>] [--include=<pattern>]
 
 Configuration:
   Create xsync.config.js or xsync.config.ts in your project root with:
@@ -20,7 +20,9 @@ Configuration:
     privateKeyPath: "path/to/key",
     password: "password",
     delete: false,
-    fast: false
+    fast: false,
+    exclude: ["node_modules/**", "config/**"],
+    include: ["config/production.json"]
   }
 
 Environment variables (override config file):
@@ -31,11 +33,15 @@ Environment variables (override config file):
   DEPLOY_PRIVATE_KEY_PATH  Path to private key (recommended)
   DEPLOY_PASSWORD     Password (alternative to key)
   DEPLOY_DELETE       "1" to delete files on remote that no longer exist locally
+  DEPLOY_EXCLUDE      Comma-separated glob patterns to exclude (e.g. "node_modules/**,.git/**")
+  DEPLOY_INCLUDE      Comma-separated glob patterns to include (overrides exclude)
 
 Flags:
   --delete            Delete remote files that don't exist locally
   --fast              Skip hashing, compare only size and mtime (faster but less accurate)
   --dry               Dry run mode - show what would be changed without actually uploading/deleting
+  --exclude=<pattern> Exclude files matching glob pattern (can be used multiple times)
+  --include=<pattern> Include files matching glob pattern, overriding exclude (can be used multiple times)
 `);
 }
 
@@ -90,7 +96,24 @@ async function main() {
     const deleteExtra = args.includes('--delete') || config?.delete === true;
     const fast = args.includes('--fast') || config?.fast === true;
     const dry = args.includes('--dry');
-    await deploy({ ...params, localDir, deleteExtra, fast, dry });
+
+    // Parse --exclude and --include arguments
+    const excludeArgs: string[] = [];
+    const includeArgs: string[] = [];
+
+    for (const arg of args) {
+      if (arg.startsWith('--exclude=')) {
+        excludeArgs.push(arg.slice('--exclude='.length));
+      } else if (arg.startsWith('--include=')) {
+        includeArgs.push(arg.slice('--include='.length));
+      }
+    }
+
+    // Merge with config (CLI args take priority)
+    const exclude = excludeArgs.length > 0 ? excludeArgs : config?.exclude;
+    const include = includeArgs.length > 0 ? includeArgs : config?.include;
+
+    await deploy({ ...params, localDir, deleteExtra, fast, dry, exclude, include });
     return;
   }
 

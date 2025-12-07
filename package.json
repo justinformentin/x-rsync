@@ -1,8 +1,15 @@
 {
   "name": "x-sync",
   "version": "0.1.1",
-  "description": "A tiny rsync-style deployment tool using SFTP + SHA-256 diffing. Deploy only changed files to remote servers.",
-  "keywords": ["sftp", "deploy", "sync", "rsync", "ssh", "deployment", "file-sync"],
+  "description": "A tiny rsync-style tool using SFTP + SHA-256 diffing. Push only changed files to remote servers.",
+  "keywords": [
+    "sftp",
+    "deploy",
+    "sync",
+    "rsync",
+    "ssh",
+    "file-sync"
+  ],
   "author": "Justin Formentin",
   "repository": {
     "type": "git",
@@ -36,9 +43,10 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "ssh2-sftp-client": "^10.0.0",
     "cli-progress": "^3.12.0",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "minimatch": "^10.1.1",
+    "ssh2-sftp-client": "^10.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

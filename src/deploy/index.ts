@@ -22,6 +22,8 @@ export interface DeployOptions {
   deleteExtra?: boolean;
   fast?: boolean;
   dry?: boolean;
+  exclude?: string[];
+  include?: string[];
 }
 
 export async function deploy(options: DeployOptions) {
@@ -37,6 +39,8 @@ export async function deploy(options: DeployOptions) {
     deleteExtra = false,
     fast = false,
     dry = false,
+    exclude,
+    include,
   } = options;
 
   const localRoot = path.resolve(localDir);
@@ -46,7 +50,7 @@ export async function deploy(options: DeployOptions) {
       dry ? ' (dry run)' : ''
     }`
   );
-  const nextManifest = await scanDirectory(localRoot, fast);
+  const nextManifest = await scanDirectory(localRoot, fast, exclude, include);
 
   console.log(`Loading previous manifest from: ${manifestPath}`);
   const prevManifest = await loadManifest(manifestPath);

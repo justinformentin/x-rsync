@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import SFTPClient from 'ssh2-sftp-client';
+import { minimatch } from 'minimatch';
 import { Manifest, FileEntry } from '../types.js';
 
 export function computeDiff(prev: Manifest | null, next: Manifest, fast: boolean = false) {
@@ -68,31 +69,77 @@ export async function hashFile(filePath: string): Promise<string> {
   });
 }
 
-export async function scanDirectory(root: string, fast: boolean = false): Promise<Manifest> {
+export async function scanDirectory(
+  root: string,
+  fast: boolean = false,
+  exclude?: string[],
+  include?: string[]
+): Promise<Manifest> {
   const files: Record<string, FileEntry> = {};
   const rootAbs = path.resolve(root);
+
+  /**
+   * Check if a file path should be included based on exclude/include patterns
+   * Logic:
+   * 1. If include patterns exist and path matches any include pattern -> include
+   * 2. If exclude patterns exist and path matches any exclude pattern -> exclude
+   * 3. Otherwise -> include
+   */
+  function shouldIncludeFile(relPath: string): boolean {
+    // Check include patterns first (they override exclude)
+    if (include && include.length > 0) {
+      const matchesInclude = include.some(pattern => minimatch(relPath, pattern));
+      if (matchesInclude) {
+        return true;
+      }
+    }
+
+    // Check exclude patterns
+    if (exclude && exclude.length > 0) {
+      const matchesExclude = exclude.some(pattern => minimatch(relPath, pattern));
+      if (matchesExclude) {
+        // If there are include patterns, exclude unless explicitly included
+        // If there are no include patterns, exclude
+        return false;
+      }
+    }
+
+    // If include patterns exist but didn't match, and we got here, exclude
+    if (include && include.length > 0) {
+      return false;
+    }
+
+    // Default: include
+    return true;
+  }
 
   async function walk(current: string) {
     const entries = await fs.promises.readdir(current, { withFileTypes: true });
 
     for (const entry of entries) {
       const fullPath = path.join(current, entry.name);
+      const relPath = path.relative(rootAbs, fullPath).split(path.sep).join('/');
+
       if (entry.isDirectory()) {
-        await walk(fullPath);
+        // Check if directory itself should be excluded
+        // Also check with trailing slash for directory-specific patterns
+        if (shouldIncludeFile(relPath) || shouldIncludeFile(relPath + '/')) {
+          await walk(fullPath);
+        }
       } else if (entry.isFile()) {
-        const stat = await fs.promises.stat(fullPath);
+        // Check if file should be included
+        if (shouldIncludeFile(relPath)) {
+          const stat = await fs.promises.stat(fullPath);
 
-        // In fast mode, use a placeholder hash to skip expensive hashing
-        const hash = fast ? '' : await hashFile(fullPath);
+          // In fast mode, use a placeholder hash to skip expensive hashing
+          const hash = fast ? '' : await hashFile(fullPath);
 
-        // Path relative to root, always POSIX-style
-        const rel = path.relative(rootAbs, fullPath).split(path.sep).join('/');
-
-        files[rel] = {
-          hash,
-          size: stat.size,
-          mtimeMs: stat.mtimeMs,
-        };
+          files[relPath] = {
+            hash,
+            size: stat.size,
+            mtimeMs: stat.mtimeMs,
+          };
+        }
       }
     }
   }
