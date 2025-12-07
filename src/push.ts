@@ -6,6 +6,8 @@ import cliProgress from 'cli-progress';
 import { initSftp } from './lib/init-sftp.js';
 import { computeDiff } from './lib/compute-diff.js';
 import { ensureRemoteDir } from './lib/ensure-remote-dir.js';
+import { Manifest } from './types.js';
+import type SFTPClient from 'ssh2-sftp-client';
 
 export interface PushOptions {
   localDir: string;
@@ -23,7 +25,12 @@ export interface PushOptions {
   include?: string[];
 }
 
-export async function sync(options: PushOptions) {
+type PullRes = {
+  manifest?: Manifest;
+  sftp?: SFTPClient;
+};
+
+export async function push(options: PushOptions, pullRes: PullRes) {
   const {
     localDir,
     manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
@@ -47,14 +54,14 @@ export async function sync(options: PushOptions) {
       dry ? ' (dry run)' : ''
     }`
   );
+  const prevManifest = pullRes.manifest || (await loadManifest(manifestPath));
+
   const nextManifest = await scanLocalDirectory(
     localRoot,
     fast,
     exclude,
     include
   );
-
-  let prevManifest = await loadManifest(manifestPath);
 
   const { toUpload, toDelete } = computeDiff(prevManifest, nextManifest, fast);
 
@@ -75,13 +82,15 @@ export async function sync(options: PushOptions) {
 
   bar.start(barMax, 0);
 
-  const sftp = await initSftp({
-    host,
-    port,
-    username,
-    privateKeyPath,
-    password,
-  });
+  const sftp =
+    pullRes.sftp ||
+    (await initSftp({
+      host,
+      port,
+      username,
+      privateKeyPath,
+      password,
+    }));
 
   try {
     for (const rel of toUpload) {
@@ -119,5 +128,5 @@ export async function sync(options: PushOptions) {
 
   console.log('Saving new manifest.');
   await saveManifest(manifestPath, nextManifest);
-  console.log('Sync completed.');
+  console.log('Push completed.');
 }

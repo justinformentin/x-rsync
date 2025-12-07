@@ -41,6 +41,7 @@ export async function pull(options: PullOptions) {
 
     await saveManifest(manifestPath, manifest);
     console.log(`Pull: wrote manifest to ${manifestPath}`);
+    return {manifest, sftp}
   } finally {
     await sftp.end();
     console.log('Pull: disconnected.');
