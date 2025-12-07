@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { deploy } from './deploy/index.js';
-import { loadConfig, mergeConfig } from './config.js';
+import { deploy } from './sync.js';
+import { loadConfig, mergeConfig } from './lib/config.js';
 
 function printHelp() {
   console.log(`

@@ -1,8 +1,8 @@
 // src/sync.ts
 import path from 'path';
-import { saveManifest } from '../save-manifest.js';
-import { scanRemoteDirectory } from './utils.js';
-import { initSftp } from '../init-sftp.js';
+import { saveManifest } from './lib/manifest.js';
+import { scanRemoteDirectory } from './lib/scan-remote.js';
+import { initSftp } from './lib/init-sftp.js';
 
 export interface SyncOptions {
   manifestPath?: string;
@@ -14,7 +14,7 @@ export interface SyncOptions {
   remoteDir: string;
 }
 
-export async function sync(options: SyncOptions) {
+export async function pull(options: SyncOptions) {
   const {
     manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
     host,

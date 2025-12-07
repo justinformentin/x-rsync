@@ -1,15 +1,12 @@
 import path from 'path';
-import { saveManifest } from '../save-manifest.js';
-import {
-  loadManifest,
-  scanDirectory,
-  computeDiff,
-  ensureRemoteDir,
-} from './utils.js';
+import { saveManifest, loadManifest } from './lib/manifest.js';
+import { scanLocalDirectory } from './lib/scan-local.js';
 // @ts-ignore
 import cliProgress from 'cli-progress';
-import { initSftp } from '../init-sftp.js';
-import { scanRemoteDirectory } from '../sync/utils.js';
+import { initSftp } from './lib/init-sftp.js';
+import { scanRemoteDirectory } from './lib/scan-remote.js';
+import { computeDiff } from './lib/compute-diff.js';
+import { ensureRemoteDir } from './lib/ensure-remote-dir.js';
 
 export interface DeployOptions {
   localDir: string;
@@ -51,7 +48,14 @@ export async function deploy(options: DeployOptions) {
       dry ? ' (dry run)' : ''
     }`
   );
-  const nextManifest = await scanDirectory(localRoot, fast, exclude, include);
+  const nextManifest = await scanLocalDirectory(
+    localRoot,
+    fast,
+    exclude,
+    include
+  );
+
+  let prevManifest = await loadManifest(manifestPath);
 
   const sftp = await initSftp({
     host,
@@ -62,7 +66,6 @@ export async function deploy(options: DeployOptions) {
   });
 
   console.log(`Loading previous manifest from: ${manifestPath}`);
-  let prevManifest = await loadManifest(manifestPath);
   if (!prevManifest) {
     prevManifest = await scanRemoteDirectory(sftp, remoteDir);
     await saveManifest(manifestPath, prevManifest);
