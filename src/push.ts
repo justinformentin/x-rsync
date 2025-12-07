@@ -4,11 +4,10 @@ import { scanLocalDirectory } from './lib/scan-local.js';
 // @ts-ignore
 import cliProgress from 'cli-progress';
 import { initSftp } from './lib/init-sftp.js';
-import { scanRemoteDirectory } from './lib/scan-remote.js';
 import { computeDiff } from './lib/compute-diff.js';
 import { ensureRemoteDir } from './lib/ensure-remote-dir.js';
 
-export interface SyncOptions {
+export interface PushOptions {
   localDir: string;
   manifestPath?: string;
   host: string;
@@ -24,7 +23,7 @@ export interface SyncOptions {
   include?: string[];
 }
 
-export async function sync(options: SyncOptions) {
+export async function sync(options: PushOptions) {
   const {
     localDir,
     manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
@@ -57,20 +56,6 @@ export async function sync(options: SyncOptions) {
 
   let prevManifest = await loadManifest(manifestPath);
 
-  const sftp = await initSftp({
-    host,
-    port,
-    username,
-    privateKeyPath,
-    password,
-  });
-
-  console.log(`Loading previous manifest from: ${manifestPath}`);
-  if (!prevManifest) {
-    prevManifest = await scanRemoteDirectory(sftp, remoteDir);
-    await saveManifest(manifestPath, prevManifest);
-  }
-
   const { toUpload, toDelete } = computeDiff(prevManifest, nextManifest, fast);
 
   console.log(
@@ -89,6 +74,14 @@ export async function sync(options: SyncOptions) {
   const barMax = toUpload.length + (toDelete.length || 0);
 
   bar.start(barMax, 0);
+
+  const sftp = await initSftp({
+    host,
+    port,
+    username,
+    privateKeyPath,
+    password,
+  });
 
   try {
     for (const rel of toUpload) {

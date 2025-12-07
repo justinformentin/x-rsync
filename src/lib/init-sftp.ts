@@ -31,7 +31,7 @@ export async function initSftp({
       throw new Error(
         `The private key at ${privateKeyPath} is a PuTTY .ppk file.\n` +
           `Please convert it to an OpenSSH private key (via PuTTYgen: Conversions -> Export OpenSSH key)\n` +
-          `and point DEPLOY_PRIVATE_KEY_PATH at that file instead.`
+          `and point XSYNC_PRIVATE_KEY_PATH at that file instead.`
       );
     }
     connectConfig.privateKey = keyBuf;

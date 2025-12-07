@@ -63,19 +63,19 @@ export function mergeConfig(configFile: XSyncConfig | null): XSyncConfig {
   const env = process.env;
 
   // Parse exclude/include from env vars (comma-separated)
-  const envExclude = env.DEPLOY_EXCLUDE?.split(',').map((s) => s.trim());
-  const envInclude = env.DEPLOY_INCLUDE?.split(',').map((s) => s.trim());
+  const envExclude = env.XSYNC_EXCLUDE?.split(',').map((s) => s.trim());
+  const envInclude = env.XSYNC_INCLUDE?.split(',').map((s) => s.trim());
 
   return {
-    host: env.DEPLOY_HOST || configFile?.host,
-    username: env.DEPLOY_USER || configFile?.username,
-    port: env.DEPLOY_PORT
-      ? parseInt(env.DEPLOY_PORT, 10)
+    host: env.XSYNC_HOST || configFile?.host,
+    username: env.XSYNC_USER || configFile?.username,
+    port: env.XSYNC_PORT
+      ? parseInt(env.XSYNC_PORT, 10)
       : configFile?.port || 22,
-    remoteDir: env.DEPLOY_REMOTE_DIR || configFile?.remoteDir,
-    privateKeyPath: env.DEPLOY_PRIVATE_KEY_PATH || configFile?.privateKeyPath,
-    password: env.DEPLOY_PASSWORD || configFile?.password,
-    delete: !!process.env.DEPLOY_DELETE || configFile?.delete || false,
+    remoteDir: env.XSYNC_REMOTE_DIR || configFile?.remoteDir,
+    privateKeyPath: env.XSYNC_PRIVATE_KEY_PATH || configFile?.privateKeyPath,
+    password: env.XSYNC_PASSWORD || configFile?.password,
+    delete: !!process.env.XSYNC_DELETE || configFile?.delete || false,
     fast: configFile?.fast || false,
     exclude: envExclude || configFile?.exclude,
     include: envInclude || configFile?.include,

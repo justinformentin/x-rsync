@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { deploy } from './sync.js';
+import { sync } from './sync.js';
 import { loadConfig, mergeConfig } from './lib/config.js';
 
 function printHelp() {
   console.log(`
 Usage:
-  x-sync deploy <localDir> [--delete] [--fast] [--dry] [--exclude=<pattern>] [--include=<pattern>]
+  x-sync sync <localDir> [--delete] [--fast] [--dry] [--exclude=<pattern>] [--include=<pattern>]
 
 Configuration:
   Create xsync.config.js or xsync.config.ts in your project root with:
@@ -23,15 +23,15 @@ Configuration:
   }
 
 Environment variables (override config file):
-  DEPLOY_HOST         Required. e.g. "your.server.ip"
-  DEPLOY_USER         Required. e.g. "root"
-  DEPLOY_PORT         Optional. default 22
-  DEPLOY_REMOTE_DIR   Required. e.g. "/var/www/website"
-  DEPLOY_PRIVATE_KEY_PATH  Path to private key (recommended)
-  DEPLOY_PASSWORD     Password (alternative to key)
-  DEPLOY_DELETE       "1" to delete files on remote that no longer exist locally
-  DEPLOY_EXCLUDE      Comma-separated glob patterns to exclude (e.g. "node_modules/**,.git/**")
-  DEPLOY_INCLUDE      Comma-separated glob patterns to include (overrides exclude)
+  XSYNC_HOST         Required. e.g. "your.server.ip"
+  XSYNC_USER         Required. e.g. "root"
+  XSYNC_PORT         Optional. default 22
+  XSYNC_REMOTE_DIR   Required. e.g. "/var/www/website"
+  XSYNC_PRIVATE_KEY_PATH  Path to private key (recommended)
+  XSYNC_PASSWORD     Password (alternative to key)
+  XSYNC_DELETE       "1" to delete files on remote that no longer exist locally
+  XSYNC_EXCLUDE      Comma-separated glob patterns to exclude (e.g. "node_modules/**,.git/**")
+  XSYNC_INCLUDE      Comma-separated glob patterns to include (overrides exclude)
 
 Flags:
   --delete            Delete remote files that don't exist locally
@@ -59,14 +59,14 @@ async function main() {
 
   if (!host || !username || !remoteDir) {
     console.error(
-      'Missing required configuration: host, user, and remoteDir must be set via config file or environment variables (DEPLOY_HOST, DEPLOY_USER, DEPLOY_REMOTE_DIR)'
+      'Missing required configuration: host, user, and remoteDir must be set via config file or environment variables (XSYNC_HOST, XSYNC_USER, XSYNC_REMOTE_DIR)'
     );
     process.exit(1);
   }
 
   if (!privateKeyPath && !password) {
     console.error(
-      'You must set either privateKeyPath or password via config file or environment variables (DEPLOY_PRIVATE_KEY_PATH or DEPLOY_PASSWORD)'
+      'You must set either privateKeyPath or password via config file or environment variables (XSYNC_PRIVATE_KEY_PATH or XSYNC_PASSWORD)'
     );
     process.exit(1);
   }
@@ -82,7 +82,7 @@ async function main() {
     remoteDir,
   };
 
-  if (command === 'deploy') {
+  if (command === 'sync') {
     const localDir = args[1] || '.';
     const deleteExtra = args.includes('--delete') || config?.delete === true;
     const fast = args.includes('--fast') || config?.fast === true;
@@ -104,7 +104,7 @@ async function main() {
     const exclude = excludeArgs.length > 0 ? excludeArgs : config?.exclude;
     const include = includeArgs.length > 0 ? includeArgs : config?.include;
 
-    await deploy({ ...params, localDir, deleteExtra, fast, dry, exclude, include });
+    await sync({ ...params, localDir, deleteExtra, fast, dry, exclude, include });
     return;
   }
 

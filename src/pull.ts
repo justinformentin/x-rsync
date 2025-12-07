@@ -1,10 +1,10 @@
-// src/sync.ts
+// pull.ts
 import path from 'path';
 import { saveManifest } from './lib/manifest.js';
 import { scanRemoteDirectory } from './lib/scan-remote.js';
 import { initSftp } from './lib/init-sftp.js';
 
-export interface SyncOptions {
+export interface PullOptions {
   manifestPath?: string;
   host: string;
   port?: number;
@@ -14,7 +14,7 @@ export interface SyncOptions {
   remoteDir: string;
 }
 
-export async function pull(options: SyncOptions) {
+export async function pull(options: PullOptions) {
   const {
     manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
     host,
@@ -36,13 +36,13 @@ export async function pull(options: SyncOptions) {
   try {
     const manifest = await scanRemoteDirectory(sftp, remoteDir);
     console.log(
-      `Sync: found ${Object.keys(manifest.files).length} files on remote.`
+      `Pull: found ${Object.keys(manifest.files).length} files on remote.`
     );
 
     await saveManifest(manifestPath, manifest);
-    console.log(`Sync: wrote manifest to ${manifestPath}`);
+    console.log(`Pull: wrote manifest to ${manifestPath}`);
   } finally {
     await sftp.end();
-    console.log('Sync: disconnected.');
+    console.log('Pull: disconnected.');
   }
 }

@@ -1,8 +1,8 @@
 # x-sync
 
-A tiny rsync-style deployment tool built for Node/TypeScript using **SFTP + SHA-256 diffing**.
+A tiny rsync-style tool built for Node/TypeScript using **SFTP + SHA-256 diffing**.
 
-It lets you **deploy only changed files** to a remote server over SSH — no rsync or native binaries required.
+It lets you **sync only changed files** to a remote server over SSH — no rsync or native binaries required.
 Works on **Windows, macOS, and Linux**.
 
 ---
@@ -10,13 +10,13 @@ Works on **Windows, macOS, and Linux**.
 ## ✨ Features
 
 - 🚀 **Deploy changed files only**
-  `x-sync deploy ./dist` uploads only files whose hashes differ from the remote manifest.
+  `x-sync sync ./dist` uploads only files whose hashes differ from the remote manifest.
 
-- 🔄 **Auto-sync on first deploy**
-  No manifest? No problem. The first deploy automatically syncs from the remote server.
+- 🔄 **Auto-sync on first sync**
+  No manifest? No problem. The first sync automatically syncs from the remote server.
 
 - 🗑️ **Optional remote deletion**
-  Use `--delete` (or `DEPLOY_DELETE=1`) to remove remote files not present locally.
+  Use `--delete` (or `XSYNC_DELETE=1`) to remove remote files not present locally.
 
 - 🔐 **SSH support**
   - OpenSSH private key
@@ -35,7 +35,7 @@ Works on **Windows, macOS, and Linux**.
 
 ## 📦 Installing in Your Project
 
-In your project (the one you want to deploy **from**):
+In your project (the one you want to sync **from**):
 
 ```bash
 npm install -D x-sync ssh2-sftp-client
@@ -46,7 +46,7 @@ Add to your `package.json`:
 ```json
 {
   "scripts": {
-    "deploy": "x-sync deploy ./dist"
+    "sync": "x-sync sync ./dist"
   }
 }
 ```
@@ -105,33 +105,33 @@ export default {
 
 ### Option 2: Environment Variables
 
-Set these before running `sync` or `deploy`. Environment variables **override** config file settings.
+Set these before running `sync`. Environment variables **override** config file settings.
 
 **Minimum:**
 
 ```bash
-DEPLOY_HOST=your.server.ip
-DEPLOY_USER=root
-DEPLOY_REMOTE_DIR=/var/www/website
+XSYNC_HOST=your.server.ip
+XSYNC_USER=root
+XSYNC_REMOTE_DIR=/var/www/website
 ```
 
 **Authentication (choose ONE):**
 
 ```bash
 # Using a private key (recommended)
-DEPLOY_PRIVATE_KEY_PATH=C:/Users/you/.ssh/id_rsa
+XSYNC_PRIVATE_KEY_PATH=C:/Users/you/.ssh/id_rsa
 
 # OR using a password
-DEPLOY_PASSWORD=your_password
+XSYNC_PASSWORD=your_password
 ```
 
 **Optional:**
 
 ```bash
-DEPLOY_PORT=22
-DEPLOY_DELETE=1   # enable deletes during deploy
-DEPLOY_EXCLUDE="node_modules/**,.git/**,*.log"  # comma-separated glob patterns
-DEPLOY_INCLUDE="config/production.json"  # comma-separated glob patterns
+XSYNC_PORT=22
+XSYNC_DELETE=1   # enable deletes during sync
+XSYNC_EXCLUDE="node_modules/**,.git/**,*.log"  # comma-separated glob patterns
+XSYNC_INCLUDE="config/production.json"  # comma-separated glob patterns
 ```
 
 ### Option 3: .env File
@@ -139,10 +139,10 @@ DEPLOY_INCLUDE="config/production.json"  # comma-separated glob patterns
 Create a `.env` file in your project root:
 
 ```env
-DEPLOY_HOST=your.server.ip
-DEPLOY_USER=root
-DEPLOY_REMOTE_DIR=/var/www/website
-DEPLOY_PRIVATE_KEY_PATH=~/.ssh/id_rsa
+XSYNC_HOST=your.server.ip
+XSYNC_USER=root
+XSYNC_REMOTE_DIR=/var/www/website
+XSYNC_PRIVATE_KEY_PATH=~/.ssh/id_rsa
 ```
 
 ---
@@ -152,16 +152,16 @@ DEPLOY_PRIVATE_KEY_PATH=~/.ssh/id_rsa
 ### Deploy (upload only changed files)
 
 ```bash
-npm run deploy
+npm run sync
 ```
 
 or specify a local folder:
 
 ```bash
-npm run deploy -- ./dist
+npm run sync -- ./dist
 ```
 
-**The deploy logic:**
+**The sync logic:**
 
 - On first run: Automatically syncs from remote server to create initial manifest (`.xsync/manifest.json`)
 - Recursively scans your local folder
@@ -170,17 +170,17 @@ npm run deploy -- ./dist
   - new files
   - changed files
 - Optionally deletes files on the server that no longer exist locally
-- Updates `.xsync/manifest.json` to match the server after deploy
+- Updates `.xsync/manifest.json` to match the server after sync
 
-**Note:** The first time you run deploy, it will automatically connect to your remote server and scan all existing files to create the initial manifest. This ensures future deploys only upload changed files.
+**Note:** The first time you run sync, it will automatically connect to your remote server and scan all existing files to create the initial manifest. This ensures future syncs only upload changed files.
 
 #### Fast Mode
 
-For faster deployments (with slightly lower accuracy), use the `--fast` flag or set `fast: true` in your config file:
+For faster syncs (with slightly lower accuracy), use the `--fast` flag or set `fast: true` in your config file:
 
 **Via CLI flag:**
 ```bash
-npm run deploy -- --fast
+npm run sync -- --fast
 ```
 
 **Via config file:**
@@ -203,7 +203,7 @@ export default {
 To preview what would be changed without actually uploading or deleting files:
 
 ```bash
-npm run deploy -- --dry
+npm run sync -- --dry
 ```
 
 **Dry run mode:**
@@ -211,19 +211,19 @@ npm run deploy -- --dry
 - Shows how many files would be uploaded/deleted
 - Does not connect to the server
 - Does not modify any files
-- Useful for testing before actual deployment
+- Useful for testing before actual sync
 
 #### Exclude/Include Patterns
 
-Control which files are deployed using glob patterns:
+Control which files are synced using glob patterns:
 
 **Via CLI flags:**
 ```bash
 # Exclude files
-npm run deploy -- --exclude="node_modules/**" --exclude=".git/**"
+npm run sync -- --exclude="node_modules/**" --exclude=".git/**"
 
 # Include files (overrides exclude)
-npm run deploy -- --exclude="config/*" --include="config/production.json"
+npm run sync -- --exclude="config/*" --include="config/production.json"
 ```
 
 **Via config file:**
@@ -245,8 +245,8 @@ export default {
 
 **Via environment variables:**
 ```bash
-DEPLOY_EXCLUDE="node_modules/**,.git/**,*.log"
-DEPLOY_INCLUDE="config/production.json"
+XSYNC_EXCLUDE="node_modules/**,.git/**,*.log"
+XSYNC_INCLUDE="config/production.json"
 ```
 
 **How it works:**
@@ -271,13 +271,13 @@ DEPLOY_INCLUDE="config/production.json"
 To remove remote files that no longer exist locally:
 
 ```bash
-npm run deploy -- --delete
+npm run sync -- --delete
 ```
 
 Or set:
 
 ```bash
-DEPLOY_DELETE=1
+XSYNC_DELETE=1
 ```
 
 ---
@@ -292,19 +292,18 @@ x-sync does **NOT** support `.ppk` files (PuTTY format).
 2. Load your `.ppk`
 3. Go to: **Conversions → Export OpenSSH key**
 4. Save as: `id_rsa` (or any name)
-5. Use the saved file path in `privateKeyPath` (config file) or `DEPLOY_PRIVATE_KEY_PATH` (env var)
+5. Use the saved file path in `privateKeyPath` (config file) or `XSYNC_PRIVATE_KEY_PATH` (env var)
 
 ---
 
 ## 📁 Project Structure
 
 ```
-.xsync/manifest.json  # Remote server state (auto-generated on first deploy)
+.xsync/manifest.json  # Remote server state (auto-generated on first sync)
 dist/cli.js          # Bundled CLI (ESM)
 dist/cli.cjs         # Bundled CLI (CommonJS)
 src/
   cli.ts             # Entry point
-  deploy/            # Deploy command logic
   sync/              # Remote sync utilities
   shared.ts          # Shared utilities
   types.ts           # TypeScript types
@@ -343,42 +342,41 @@ export default {
 **2. Use the CLI:**
 
 ```bash
-# First deploy - automatically syncs from remote server to create manifest
-npm run deploy
+
 
 # Make local changes to your code
 # ... edit files ...
 
 # Deploy only changed files
-npm run deploy
+npm run sync
 
 # Deploy with deletion of removed files
-npm run deploy -- --delete
+npm run sync -- --delete
 
-# Fast deploy (skip hashing, use size+mtime comparison)
-npm run deploy -- --fast
+# Fast sync (skip hashing, use size+mtime comparison)
+npm run sync -- --fast
 
-# Dry run (preview changes without actually deploying)
-npm run deploy -- --dry
+# Dry run (preview changes without actually syncing)
+npm run sync -- --dry
 
 # Combine flags
-npm run deploy -- --fast --delete
+npm run sync -- --fast --delete
 
 # Dry run with fast mode
-npm run deploy -- --dry --fast
+npm run sync -- --dry --fast
 ```
 
 ### Using Environment Variables
 
 ```bash
 # 1. Set up environment variables
-export DEPLOY_HOST=192.168.1.100
-export DEPLOY_USER=root
-export DEPLOY_PRIVATE_KEY_PATH=~/.ssh/id_rsa
-export DEPLOY_REMOTE_DIR=/var/www/myapp
+export XSYNC_HOST=192.168.1.100
+export XSYNC_USER=root
+export XSYNC_PRIVATE_KEY_PATH=~/.ssh/id_rsa
+export XSYNC_REMOTE_DIR=/var/www/myapp
 
 # 2. Deploy (first run will auto-sync from remote)
-npm run deploy
+npm run sync
 ```
 
 ---
