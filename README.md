@@ -1,4 +1,4 @@
-# x-sync
+# x-rsync
 
 A tiny rsync-style tool built for Node/TypeScript using **SFTP + SHA-256 diffing**.
 
@@ -40,7 +40,7 @@ Works on **Windows, macOS, and Linux**.
 In your project (the one you want to sync **from**):
 
 ```bash
-npm install -D x-sync ssh2-sftp-client
+npm install -D x-rsync ssh2-sftp-client
 ```
 
 Add to your `package.json`:
@@ -48,9 +48,9 @@ Add to your `package.json`:
 ```json
 {
   "scripts": {
-    "sync": "x-sync sync ./dist",
-    "pull": "x-sync pull",
-    "push": "x-sync push ./dist"
+    "sync": "x-rsync sync ./dist",
+    "pull": "x-rsync pull",
+    "push": "x-rsync push ./dist"
   }
 }
 ```
@@ -59,7 +59,7 @@ Add to your `package.json`:
 ```json
 {
   "scripts": {
-    "sync": "x-sync sync ./dist"
+    "sync": "x-rsync sync ./dist"
   }
 }
 ```
@@ -68,7 +68,7 @@ Add to your `package.json`:
 
 ## ⚙️ Configuration
 
-You can configure x-sync using either a **config file** (recommended) or **environment variables**.
+You can configure x-rsync using either a **config file** (recommended) or **environment variables**.
 
 ### Option 1: Config File (Recommended)
 
@@ -164,12 +164,12 @@ XSYNC_PRIVATE_KEY_PATH=~/.ssh/id_rsa
 
 ### Command Overview
 
-x-sync provides three commands:
+x-rsync provides three commands:
 
 #### `sync` - The all-in-one command (recommended)
 
 ```bash
-x-sync sync <localDir>
+x-rsync sync <localDir>
 ```
 
 Combines `pull` + `push` into one command:
@@ -186,7 +186,7 @@ npm run sync -- ./dist   # sync ./dist directory
 #### `pull` - Download remote file list
 
 ```bash
-x-sync pull
+x-rsync pull
 ```
 
 Connects to your remote server, scans all files, and creates/updates `.xsync/manifest.json`. Use this when:
@@ -197,7 +197,7 @@ Connects to your remote server, scans all files, and creates/updates `.xsync/man
 #### `push` - Upload changed files
 
 ```bash
-x-sync push <localDir>
+x-rsync push <localDir>
 ```
 
 Scans your local directory, compares with manifest, and uploads only changed files. Use this when:
@@ -316,7 +316,7 @@ XSYNC_DELETE=1
 
 ## 🔐 Using SSH Keys on Windows
 
-x-sync does **NOT** support `.ppk` files (PuTTY format).
+x-rsync does **NOT** support `.ppk` files (PuTTY format).
 
 **Convert to OpenSSH using PuTTYgen:**
 

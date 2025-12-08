@@ -1,5 +1,5 @@
 {
-  "name": "x-sync",
+  "name": "x-rsync",
   "version": "0.1.1",
   "description": "A tiny rsync-style tool using SFTP + SHA-256 diffing. Push only changed files to remote servers.",
   "keywords": [
@@ -13,13 +13,13 @@
   "author": "Justin Formentin",
   "repository": {
     "type": "git",
-    "url": "https://github.com/justinformentin/x-sync"
+    "url": "https://github.com/justinformentin/x-rsync"
   },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "x-sync": "./dist/cli.js"
+    "x-rsync": "./dist/cli.js"
   },
   "exports": {
     ".": {

@@ -6,7 +6,7 @@ import { push } from './push.js';
 import { loadConfig, mergeConfig } from './lib/config.js';
 const program = new Command();
 program
-    .name('x-sync')
+    .name('x-rsync')
     .description('A tiny rsync-style tool using SFTP + SHA-256 diffing')
     .version('0.1.1')
     .addHelpText('after', `

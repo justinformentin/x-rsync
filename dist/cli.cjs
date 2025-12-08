@@ -5429,7 +5429,7 @@ function mergeConfig(configFile) {
 
 // src/cli.ts
 var program2 = new Command();
-program2.name("x-sync").description("A tiny rsync-style tool using SFTP + SHA-256 diffing").version("0.1.1").addHelpText(
+program2.name("x-rsync").description("A tiny rsync-style tool using SFTP + SHA-256 diffing").version("0.1.1").addHelpText(
   "after",
   `
 Configuration:
