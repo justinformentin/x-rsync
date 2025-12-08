@@ -1,4 +1,4 @@
-export interface DeployOptions {
+export interface SyncOptions {
     localDir: string;
     manifestPath?: string;
     host: string;
@@ -6,10 +6,14 @@ export interface DeployOptions {
     username: string;
     privateKeyPath?: string;
     password?: string;
+    passphrase?: string;
     remoteDir: string;
     deleteExtra?: boolean;
     fast?: boolean;
     dry?: boolean;
+    quiet?: boolean;
+    exclude?: string[];
+    include?: string[];
 }
-export declare function deploy(options: DeployOptions): Promise<void>;
-//# sourceMappingURL=index.d.ts.map
+export declare function sync(options: SyncOptions): Promise<void>;
+//# sourceMappingURL=sync.d.ts.map
