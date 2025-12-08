@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 import { sync } from './sync.js';
+import { pull } from './pull.js';
+import { push } from './push.js';
 import { loadConfig, mergeConfig } from './lib/config.js';
 
 function printHelp() {
   console.log(`
 Usage:
-  x-sync sync <localDir> [--delete] [--fast] [--dry] [--exclude=<pattern>] [--include=<pattern>]
+  x-sync sync <localDir> [options]   # Pull + push (recommended)
+  x-sync pull                         # Download remote file list
+  x-sync push <localDir> [options]    # Upload changed files
+
+Commands:
+  sync    Auto-pull (if needed) + push local changes
+  pull    Download remote file list and create/update manifest
+  push    Upload only changed files based on manifest
 
 Configuration:
   Create xsync.config.js or xsync.config.ts in your project root with:
@@ -82,7 +91,12 @@ async function main() {
     remoteDir,
   };
 
-  if (command === 'sync') {
+  if (command === 'pull') {
+    await pull(params);
+    return;
+  }
+
+  if (command === 'push' || command === 'sync') {
     const localDir = args[1] || '.';
     const deleteExtra = args.includes('--delete') || config?.delete === true;
     const fast = args.includes('--fast') || config?.fast === true;
@@ -104,7 +118,22 @@ async function main() {
     const exclude = excludeArgs.length > 0 ? excludeArgs : config?.exclude;
     const include = includeArgs.length > 0 ? includeArgs : config?.include;
 
-    await sync({ ...params, localDir, deleteExtra, fast, dry, exclude, include });
+    const opts = {
+      ...params,
+      localDir,
+      deleteExtra,
+      fast,
+      dry,
+      exclude,
+      include,
+    };
+
+    if (command === 'push') {
+      return await push(opts);
+    } else if (command === 'sync') {
+      return await sync(opts);
+    }
+
     return;
   }
 

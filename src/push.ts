@@ -30,7 +30,7 @@ type PullRes = {
   sftp?: SFTPClient;
 };
 
-export async function push(options: PushOptions, pullRes: PullRes) {
+export async function push(options: PushOptions, pullRes?: PullRes) {
   const {
     localDir,
     manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
@@ -54,7 +54,7 @@ export async function push(options: PushOptions, pullRes: PullRes) {
       dry ? ' (dry run)' : ''
     }`
   );
-  const prevManifest = pullRes.manifest || (await loadManifest(manifestPath));
+  const prevManifest = pullRes?.manifest || (await loadManifest(manifestPath));
 
   const nextManifest = await scanLocalDirectory(
     localRoot,
@@ -83,7 +83,7 @@ export async function push(options: PushOptions, pullRes: PullRes) {
   bar.start(barMax, 0);
 
   const sftp =
-    pullRes.sftp ||
+    pullRes?.sftp ||
     (await initSftp({
       host,
       port,

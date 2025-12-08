@@ -9,11 +9,13 @@ Works on **Windows, macOS, and Linux**.
 
 ## ✨ Features
 
-- 🚀 **Deploy changed files only**
-  `x-sync sync ./dist` uploads only files whose hashes differ from the remote manifest.
+- 🚀 **Three simple commands**
+  - `sync` - Pull remote state + push local changes (one command to rule them all)
+  - `pull` - Download remote file list and create/update manifest
+  - `push` - Upload only changed files based on manifest
 
-- 🔄 **Auto-sync on first sync**
-  No manifest? No problem. The first sync automatically syncs from the remote server.
+- 🔄 **Smart auto-pull**
+  No manifest? The `sync` command automatically pulls from remote first.
 
 - 🗑️ **Optional remote deletion**
   Use `--delete` (or `XSYNC_DELETE=1`) to remove remote files not present locally.
@@ -43,6 +45,17 @@ npm install -D x-sync ssh2-sftp-client
 
 Add to your `package.json`:
 
+```json
+{
+  "scripts": {
+    "sync": "x-sync sync ./dist",
+    "pull": "x-sync pull",
+    "push": "x-sync push ./dist"
+  }
+}
+```
+
+**Or just the essentials:**
 ```json
 {
   "scripts": {
@@ -149,30 +162,49 @@ XSYNC_PRIVATE_KEY_PATH=~/.ssh/id_rsa
 
 ## 🚀 Usage
 
-### Deploy (upload only changed files)
+### Command Overview
+
+x-sync provides three commands:
+
+#### `sync` - The all-in-one command (recommended)
 
 ```bash
-npm run sync
+x-sync sync <localDir>
 ```
 
-or specify a local folder:
+Combines `pull` + `push` into one command:
+1. Checks if manifest exists
+2. If no manifest: runs `pull` to download remote file list
+3. Runs `push` to upload changed files
+
+**Example:**
+```bash
+npm run sync         # sync current directory
+npm run sync -- ./dist   # sync ./dist directory
+```
+
+#### `pull` - Download remote file list
 
 ```bash
-npm run sync -- ./dist
+x-sync pull
 ```
 
-**The sync logic:**
+Connects to your remote server, scans all files, and creates/updates `.xsync/manifest.json`. Use this when:
+- You want to manually update the manifest from remote
+- Someone made changes directly on the server
+- You're setting up sync for the first time
 
-- On first run: Automatically syncs from remote server to create initial manifest (`.xsync/manifest.json`)
-- Recursively scans your local folder
-- Compares local file hashes against `.xsync/manifest.json`
-- Uploads only:
-  - new files
-  - changed files
-- Optionally deletes files on the server that no longer exist locally
-- Updates `.xsync/manifest.json` to match the server after sync
+#### `push` - Upload changed files
 
-**Note:** The first time you run sync, it will automatically connect to your remote server and scan all existing files to create the initial manifest. This ensures future syncs only upload changed files.
+```bash
+x-sync push <localDir>
+```
+
+Scans your local directory, compares with manifest, and uploads only changed files. Use this when:
+- You already have a manifest and just want to push changes
+- You want more control over the sync process
+
+**Note:** Most of the time, you'll just use `sync` - it handles everything automatically!
 
 #### Fast Mode
 
@@ -342,28 +374,21 @@ export default {
 **2. Use the CLI:**
 
 ```bash
-
-
-# Make local changes to your code
-# ... edit files ...
-
-# Deploy only changed files
+# Most common: just sync everything
 npm run sync
 
-# Deploy with deletion of removed files
-npm run sync -- --delete
-
-# Fast sync (skip hashing, use size+mtime comparison)
-npm run sync -- --fast
-
-# Dry run (preview changes without actually syncing)
-npm run sync -- --dry
+# Sync with options
+npm run sync -- --delete    # Delete remote files not in local
+npm run sync -- --fast      # Skip hashing (faster, less accurate)
+npm run sync -- --dry       # Preview changes without uploading
 
 # Combine flags
 npm run sync -- --fast --delete
 
-# Dry run with fast mode
-npm run sync -- --dry --fast
+# Manual control (advanced)
+npm run pull                # Update manifest from remote
+npm run push                # Push local changes only
+npm run push -- --exclude="*.log"  # Push with exclusions
 ```
 
 ### Using Environment Variables
@@ -375,7 +400,7 @@ export XSYNC_USER=root
 export XSYNC_PRIVATE_KEY_PATH=~/.ssh/id_rsa
 export XSYNC_REMOTE_DIR=/var/www/myapp
 
-# 2. Deploy (first run will auto-sync from remote)
+# 2. Sync (first run will auto-pull from remote, then push changes)
 npm run sync
 ```
 
