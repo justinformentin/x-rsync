@@ -10,6 +10,7 @@ export interface XSyncConfig {
   remoteDir?: string;
   privateKeyPath?: string;
   password?: string;
+  passphrase?: string;
   delete?: boolean;
   fast?: boolean;
   exclude?: string[];
@@ -27,13 +28,13 @@ export async function loadConfig(configPath?:string): Promise<XSyncConfig | null
   const configFiles = ['xsync.config.ts', 'xsync.config.js'];
   if(configPath) configFiles.unshift(configPath)
   for (const configFile of configFiles) {
-    const configPath = path.join(cwd, configFile);
+    const fullConfigPath = path.join(cwd, configFile);
 
-    if (fs.existsSync(configPath)) {
+    if (fs.existsSync(fullConfigPath)) {
       try {
         // For .ts files, we need to use a bundler or ts-node in production
         // For now, we'll try to dynamically import
-        const fileUrl = pathToFileURL(configPath).href;
+        const fileUrl = pathToFileURL(fullConfigPath).href;
         const module = await import(fileUrl);
 
         // Support both default export and named export
@@ -75,6 +76,7 @@ export function mergeConfig(configFile: XSyncConfig | null): XSyncConfig {
     remoteDir: env.XSYNC_REMOTE_DIR || configFile?.remoteDir,
     privateKeyPath: env.XSYNC_PRIVATE_KEY_PATH || configFile?.privateKeyPath,
     password: env.XSYNC_PASSWORD || configFile?.password,
+    passphrase: env.XSYNC_PASSPHRASE || configFile?.passphrase,
     delete: !!process.env.XSYNC_DELETE || configFile?.delete || false,
     fast: configFile?.fast || false,
     exclude: envExclude || configFile?.exclude,

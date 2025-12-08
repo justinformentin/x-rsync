@@ -11,10 +11,12 @@ export interface SyncOptions {
   username: string;
   privateKeyPath?: string;
   password?: string;
+  passphrase?: string;
   remoteDir: string;
   deleteExtra?: boolean;
   fast?: boolean;
   dry?: boolean;
+  quiet?: boolean;
   exclude?: string[];
   include?: string[];
 }

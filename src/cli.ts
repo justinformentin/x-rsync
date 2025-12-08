@@ -42,46 +42,54 @@ Environment variables (override config file):
 `
   );
 
-  function addCommonOptions(cmd: Command) {
+function addCommonOptions(cmd: Command) {
   return cmd
     .option('-q, --quiet', 'Disable logging. Default false.', false)
-    .option('-m, --manifest', 'Manifest file path', './.xsync/manifest.json')
-    .option('-c, --config', 'Config file path', './xsync.config.{js,ts}')
-    .option('-h, --host', 'SFTP host IP Address')
-    .option('-p, --port', 'SFTP port. Default 22.', '22')
-    .option('-u, --username', 'SFTP username')
-    .option('--password', 'SFTP password. Not needed if passing privatekey')
-    .option('--passphrase', 'SFTP passphrase. Used if your privatekey is encrypted.')
-    .option('--privatekey', 'SFTP Private key path')
-    .option('--remote', 'Remote directory path')
+    .option('-m, --manifest <path>', 'Manifest file path', './.xsync/manifest.json')
+    .option('-c, --config <path>', 'Config file path', './xsync.config.{js,ts}')
+    .option('--host <address>', 'SFTP host IP Address')
+    .option('-p, --port <number>', 'SFTP port. Default 22.', '22')
+    .option('-u, --username <name>', 'SFTP username')
+    .option('--password <password>', 'SFTP password. Not needed if passing privatekey')
+    .option('--passphrase <passphrase>', 'SFTP passphrase. Used if your privatekey is encrypted.')
+    .option('--privatekey <path>', 'SFTP Private key path')
+    .option('--remote <path>', 'Remote directory path')
 }
 
 // Pull command
 addCommonOptions(program
   .command('pull')
   .description('Download remote file list and create/update manifest')
-  .action(async () => {
-    const config = await getConfig();
-    await pull(config);
+  .action(async (options: any) => {
+    const config = await getConfig(options);
+    await pull({
+      host: config.host,
+      port: config.port,
+      username: config.username,
+      privateKeyPath: config.privateKeyPath,
+      password: config.password,
+      passphrase: config.passphrase,
+      remoteDir: config.remoteDir,
+      manifestPath: options.manifest,
+      quiet: config.quiet,
+    });
   }))
-
-type CliAction = (opts: ReturnType<typeof buildOptions>) => Promise<void>;
 
 function registerFileCommand(
   name: 'push' | 'sync',
   description: string,
-  action: CliAction
+  action: (opts: ReturnType<typeof buildOptions>) => Promise<void>
 ) {
   return addCommonOptions(program
     .command(`${name} [localDir]`)
     .description(description)
-    .option('-d, --delete', "Delete remote files that don't exist locally. Default true.", true)
+    .option('-d, --delete', "Delete remote files that don't exist locally. Default false.", false)
     .option('-f, --fast', 'Skip hashing, compare only size and mtime. Default false.', false)
     .option('--dry', 'Dry run mode - preview changes without uploading. Default false.', false)
     .option('--exclude <pattern...>', 'Exclude files matching glob pattern')
     .option('--include <pattern...>', 'Include files matching glob pattern')
     .action(async (localDir: string | undefined, options: any) => {
-      const config = await getConfig(options.config);
+      const config = await getConfig(options);
       const opts = buildOptions(config, localDir || '.', options);
       await action(opts);
     }));
@@ -90,20 +98,27 @@ function registerFileCommand(
 registerFileCommand(
   'push',
   'Upload only changed files based on manifest',
-  push
+  async (opts) => await push(opts, {})
 );
 
 registerFileCommand(
   'sync',
   'Auto-pull (if needed) + push local changes (recommended)',
-  sync
+  async (opts) => await sync(opts)
 );
 
-async function getConfig(configPath?:string) {
-  const configFile = await loadConfig(configPath);
+async function getConfig(cliOptions?: any) {
+  const configFile = await loadConfig(cliOptions?.config);
   const config = mergeConfig(configFile);
 
-  const { host, username, remoteDir, port, privateKeyPath, password } = config;
+  // CLI options override everything
+  const host = cliOptions?.host || config.host;
+  const username = cliOptions?.username || config.username;
+  const remoteDir = cliOptions?.remote || config.remoteDir;
+  const port = cliOptions?.port ? parseInt(cliOptions.port, 10) : config.port;
+  const privateKeyPath = cliOptions?.privatekey || config.privateKeyPath;
+  const password = cliOptions?.password || config.password;
+  const passphrase = cliOptions?.passphrase || config.passphrase;
 
   if (!host || !username || !remoteDir) {
     console.error(
@@ -125,11 +140,13 @@ async function getConfig(configPath?:string) {
     username,
     privateKeyPath,
     password,
+    passphrase,
     remoteDir,
     delete: config.delete,
     fast: config.fast,
     exclude: config.exclude,
     include: config.include,
+    quiet: cliOptions?.quiet || false,
   };
 }
 
@@ -140,11 +157,14 @@ function buildOptions(config: any, localDir: string, cmdOptions: any) {
     username: config.username,
     privateKeyPath: config.privateKeyPath,
     password: config.password,
+    passphrase: config.passphrase,
     remoteDir: config.remoteDir,
+    manifestPath: cmdOptions.manifest,
     localDir,
     deleteExtra: cmdOptions.delete ?? config.delete ?? false,
     fast: cmdOptions.fast ?? config.fast ?? false,
     dry: cmdOptions.dry ?? false,
+    quiet: config.quiet,
     exclude: cmdOptions.exclude ?? config.exclude,
     include: cmdOptions.include ?? config.include,
   };
