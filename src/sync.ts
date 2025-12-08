@@ -30,9 +30,6 @@ export async function sync(options: SyncOptions) {
   let sftp, manifest;
   // If no manifest exists, pull from remote first
   if (!prevManifest) {
-    console.log(
-      'No manifest found. Running pull to sync from remote server...'
-    );
     const pullRes = await pull(options, true);
     sftp = pullRes?.sftp;
     manifest = pullRes?.manifest;

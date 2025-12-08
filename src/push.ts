@@ -8,6 +8,7 @@ import { computeDiff } from './lib/compute-diff.js';
 import { ensureRemoteDir } from './lib/ensure-remote-dir.js';
 import { Manifest } from './types.js';
 import type SFTPClient from 'ssh2-sftp-client';
+import { Logger } from './logger.js';
 
 export interface PushOptions {
   localDir: string;
@@ -17,10 +18,12 @@ export interface PushOptions {
   username: string;
   privateKeyPath?: string;
   password?: string;
+  passphrase?: string;
   remoteDir: string;
   deleteExtra?: boolean;
   fast?: boolean;
   dry?: boolean;
+  quiet?: boolean;
   exclude?: string[];
   include?: string[];
 }
@@ -39,6 +42,7 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
     username,
     privateKeyPath,
     password,
+    passphrase,
     remoteDir,
     deleteExtra = false,
     fast = false,
@@ -48,8 +52,8 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
   } = options;
 
   const localRoot = path.resolve(localDir);
-
-  console.log(
+  const logger = new Logger(options.quiet);
+  logger.info(
     `Scanning local directory: ${localRoot}${fast ? ' (fast mode)' : ''}${
       dry ? ' (dry run)' : ''
     }`
@@ -65,14 +69,14 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
 
   const { toUpload, toDelete } = computeDiff(prevManifest, nextManifest, fast);
 
-  console.log(
+  logger.info(
     `Files to upload: ${toUpload.length}, files to delete: ${
       deleteExtra ? toDelete.length : 0
     }`
   );
 
   if (dry) {
-    console.log('No changes made (dry run).');
+    logger.info('No changes made (dry run).');
     return;
   }
 
@@ -90,6 +94,8 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
       username,
       privateKeyPath,
       password,
+      passphrase,
+      logger
     }));
 
   try {
@@ -98,7 +104,6 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
       const remotePath = `${remoteDir}/${rel}`.replace(/\\/g, '/');
       const remoteDirPath = remotePath.split('/').slice(0, -1).join('/');
 
-      //   console.log(`Uploading ${rel}`);
       await ensureRemoteDir(sftp, remoteDirPath);
       await sftp.fastPut(localPath, remotePath);
       bar.increment();
@@ -107,13 +112,11 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
     if (deleteExtra) {
       for (const rel of toDelete) {
         const remotePath = `${remoteDir}/${rel}`.replace(/\\/g, '/');
-        // console.log(`Deleting remote ${rel}`);
         try {
           await sftp.delete(remotePath);
         } catch (err) {
-          console.warn(
-            `Failed to delete ${remotePath}:`,
-            (err as Error).message
+          logger.warn(
+            `Failed to delete ${remotePath}: ${(err as Error).message}`
           );
         }
         bar.increment();
@@ -123,10 +126,10 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
   } finally {
     bar.stop();
     await sftp.end();
-    console.log('Disconnected.');
+    logger.info('Disconnected.');
   }
 
-  console.log('Saving new manifest.');
+  logger.info('Saving new manifest.');
   await saveManifest(manifestPath, nextManifest);
-  console.log('Push completed.');
+  logger.info('Push completed.');
 }

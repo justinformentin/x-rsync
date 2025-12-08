@@ -1,5 +1,6 @@
 import fs from 'fs';
 import SFTPClient from 'ssh2-sftp-client';
+import { type Logger } from '../logger';
 
 type InitSftpArgs = {
   host: string;
@@ -7,6 +8,8 @@ type InitSftpArgs = {
   username: string;
   privateKeyPath?: string;
   password?: string;
+  passphrase?: string;
+  logger: Logger
 };
 
 export async function initSftp({
@@ -15,6 +18,8 @@ export async function initSftp({
   username,
   privateKeyPath,
   password,
+  passphrase,
+  logger
 }: InitSftpArgs) {
   const sftp = new SFTPClient();
 
@@ -41,9 +46,13 @@ export async function initSftp({
     throw new Error('Either privateKeyPath or password must be provided');
   }
 
-  console.log(`Connecting to ${username}@${host}:${port}...`);
+  if(passphrase){
+    connectConfig.passphrase = passphrase;
+  }
+
+  logger.info(`Connecting to ${username}@${host}:${port}...`);
   await sftp.connect(connectConfig);
-  console.log('Connected.');
+ logger.info('Connected.');
 
   return sftp;
 }

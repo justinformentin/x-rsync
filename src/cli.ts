@@ -42,14 +42,28 @@ Environment variables (override config file):
 `
   );
 
+  function addCommonOptions(cmd: Command) {
+  return cmd
+    .option('-q, --quiet', 'Disable logging. Default false.', false)
+    .option('-m, --manifest', 'Manifest file path', './.xsync/manifest.json')
+    .option('-c, --config', 'Config file path', './xsync.config.{js,ts}')
+    .option('-h, --host', 'SFTP host IP Address')
+    .option('-p, --port', 'SFTP port. Default 22.', '22')
+    .option('-u, --username', 'SFTP username')
+    .option('--password', 'SFTP password. Not needed if passing privatekey')
+    .option('--passphrase', 'SFTP passphrase. Used if your privatekey is encrypted.')
+    .option('--privatekey', 'SFTP Private key path')
+    .option('--remote', 'Remote directory path')
+}
+
 // Pull command
-program
+addCommonOptions(program
   .command('pull')
   .description('Download remote file list and create/update manifest')
   .action(async () => {
     const config = await getConfig();
     await pull(config);
-  });
+  }))
 
 type CliAction = (opts: ReturnType<typeof buildOptions>) => Promise<void>;
 
@@ -58,19 +72,19 @@ function registerFileCommand(
   description: string,
   action: CliAction
 ) {
-  return program
+  return addCommonOptions(program
     .command(`${name} [localDir]`)
     .description(description)
-    .option('--delete', "Delete remote files that don't exist locally")
-    .option('--fast', 'Skip hashing, compare only size and mtime')
-    .option('--dry', 'Dry run mode - preview changes without uploading')
+    .option('-d, --delete', "Delete remote files that don't exist locally. Default true.", true)
+    .option('-f, --fast', 'Skip hashing, compare only size and mtime. Default false.', false)
+    .option('--dry', 'Dry run mode - preview changes without uploading. Default false.', false)
     .option('--exclude <pattern...>', 'Exclude files matching glob pattern')
     .option('--include <pattern...>', 'Include files matching glob pattern')
     .action(async (localDir: string | undefined, options: any) => {
-      const config = await getConfig();
+      const config = await getConfig(options.config);
       const opts = buildOptions(config, localDir || '.', options);
       await action(opts);
-    });
+    }));
 }
 
 registerFileCommand(
@@ -85,8 +99,8 @@ registerFileCommand(
   sync
 );
 
-async function getConfig() {
-  const configFile = await loadConfig();
+async function getConfig(configPath?:string) {
+  const configFile = await loadConfig(configPath);
   const config = mergeConfig(configFile);
 
   const { host, username, remoteDir, port, privateKeyPath, password } = config;
