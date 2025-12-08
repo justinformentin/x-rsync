@@ -33,9 +33,9 @@ export async function sync(options: SyncOptions) {
     console.log(
       'No manifest found. Running pull to sync from remote server...'
     );
-    const pullRes = await pull(options);
-    sftp = pullRes.sftp;
-    manifest = pullRes.manifest;
+    const pullRes = await pull(options, true);
+    sftp = pullRes?.sftp;
+    manifest = pullRes?.manifest;
   }
 
   // Now push local changes to remote

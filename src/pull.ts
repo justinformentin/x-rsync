@@ -14,7 +14,7 @@ export interface PullOptions {
   remoteDir: string;
 }
 
-export async function pull(options: PullOptions) {
+export async function pull(options: PullOptions, internal?: boolean) {
   const {
     manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
     host,
@@ -41,7 +41,10 @@ export async function pull(options: PullOptions) {
 
     await saveManifest(manifestPath, manifest);
     console.log(`Pull: wrote manifest to ${manifestPath}`);
-    return {manifest, sftp}
+
+    // If this pull function is being called from the sync function,
+    // we need to return these values to be used by the push function
+    if (internal) return { manifest, sftp };
   } finally {
     await sftp.end();
     console.log('Pull: disconnected.');
