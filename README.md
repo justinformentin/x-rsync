@@ -52,21 +52,21 @@ npx x-rsync push ./dist --host=192.168.1.100 --username=root --remote=/var/www/m
 
 All CLI flags:
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--host <address>` | | SFTP host IP or hostname |
-| `--port <number>` | `-p` | SFTP port (default: `22`) |
-| `--username <name>` | `-u` | SFTP username |
-| `--privatekey <path>` | | Path to OpenSSH private key |
-| `--password <password>` | | SFTP password (alternative to key) |
-| `--passphrase <passphrase>` | | Passphrase for encrypted private key |
-| `--remote <path>` | | Remote directory path |
-| `--manifest <path>` | `-m` | Manifest file path (default: `.xsync/manifest.json`) |
-| `--config <path>` | `-c` | Config file path |
-| `--delete` | `-d` | Delete remote files not present locally |
-| `--fast` | `-f` | Skip hashing, compare size+mtime only |
-| `--dry` | | Preview changes without uploading |
-| `--quiet` | `-q` | Disable logging |
+| Flag                        | Short | Description                                          |
+| --------------------------- | ----- | ---------------------------------------------------- |
+| `--host <address>`          |       | SFTP host IP or hostname                             |
+| `--port <number>`           | `-p`  | SFTP port (default: `22`)                            |
+| `--username <name>`         | `-u`  | SFTP username                                        |
+| `--privatekey <path>`       |       | Path to OpenSSH private key                          |
+| `--password <password>`     |       | SFTP password (alternative to key)                   |
+| `--passphrase <passphrase>` |       | Passphrase for encrypted private key                 |
+| `--remote <path>`           |       | Remote directory path                                |
+| `--manifest <path>`         | `-m`  | Manifest file path (default: `.xsync/manifest.json`) |
+| `--config <path>`           | `-c`  | Config file path                                     |
+| `--delete`                  | `-d`  | Delete remote files not present locally              |
+| `--fast`                    | `-f`  | Skip hashing, compare size+mtime only                |
+| `--dry`                     |       | Preview changes without uploading                    |
+| `--quiet`                   | `-q`  | Disable logging                                      |
 
 ---
 
@@ -91,6 +91,7 @@ Add to your `package.json`:
 ```
 
 **Or just the essentials:**
+
 ```json
 {
   "scripts": {
@@ -111,27 +112,23 @@ Create `xsync.config.js` in your project root:
 
 ```javascript
 export default {
-  host: "your.server.ip",
-  user: "root",
+  host: 'your.server.ip',
+  user: 'root',
   port: 22,
-  remoteDir: "/var/www/website",
-  privateKeyPath: "C:/Users/you/.ssh/id_rsa",
+  remoteDir: '/var/www/website',
+  privateKeyPath: 'C:/Users/you/.ssh/id_rsa',
   // OR use password:
   // password: "your_password",
 
   // Optional settings:
-  delete: false,  // set to true to delete remote files not present locally
-  fast: false,    // set to true to skip hashing (compare size+mtime only)
+  delete: false, // set to true to delete remote files not present locally
+  fast: false, // set to true to skip hashing (compare size+mtime only)
 
   // Exclude/Include patterns (glob syntax):
-  exclude: [
-    "node_modules/**",
-    "config/**",
-    "*.log"
-  ],
+  exclude: ['node_modules/**', 'config/**', '*.log'],
   include: [
-    "config/production.json"  // include this even if excluded by exclude patterns
-  ]
+    'config/production.json', // include this even if excluded by exclude patterns
+  ],
 };
 ```
 
@@ -139,15 +136,15 @@ Or use TypeScript (`xsync.config.ts`):
 
 ```typescript
 export default {
-  host: "your.server.ip",
-  user: "root",
+  host: 'your.server.ip',
+  user: 'root',
   port: 22,
-  remoteDir: "/var/www/website",
-  privateKeyPath: "~/.ssh/id_rsa",
+  remoteDir: '/var/www/website',
+  privateKeyPath: '~/.ssh/id_rsa',
   delete: false,
   fast: false,
-  exclude: ["node_modules/**", ".git/**"],
-  include: ["config/production.json"]
+  exclude: ['node_modules/**', '.git/**'],
+  include: ['config/production.json'],
 };
 ```
 
@@ -208,11 +205,13 @@ x-rsync sync <localDir>
 ```
 
 Combines `pull` + `push` into one command:
+
 1. Checks if manifest exists
 2. If no manifest: runs `pull` to download remote file list
 3. Runs `push` to upload changed files
 
 **Example:**
+
 ```bash
 npm run sync         # sync current directory
 npm run sync -- ./dist   # sync ./dist directory
@@ -225,6 +224,7 @@ x-rsync pull
 ```
 
 Connects to your remote server, scans all files, and creates/updates `.xsync/manifest.json`. Use this when:
+
 - You want to manually update the manifest from remote
 - Someone made changes directly on the server
 - You're setting up sync for the first time
@@ -236,6 +236,7 @@ x-rsync push <localDir>
 ```
 
 Scans your local directory, compares with manifest, and uploads only changed files. Use this when:
+
 - You already have a manifest and just want to push changes
 - You want more control over the sync process
 
@@ -246,19 +247,22 @@ Scans your local directory, compares with manifest, and uploads only changed fil
 For faster syncs (with slightly lower accuracy), use the `--fast` flag or set `fast: true` in your config file:
 
 **Via CLI flag:**
+
 ```bash
 npm run sync -- --fast
 ```
 
 **Via config file:**
+
 ```javascript
 export default {
   // ... other config
-  fast: true
+  fast: true,
 };
 ```
 
 **Fast mode:**
+
 - Skips SHA-256 hashing
 - Compares only file size and modification time (mtime)
 - Significantly faster for large codebases
@@ -274,6 +278,7 @@ npm run sync -- --dry
 ```
 
 **Dry run mode:**
+
 - Scans local files and compares with manifest
 - Shows how many files would be uploaded/deleted
 - Does not connect to the server
@@ -285,6 +290,7 @@ npm run sync -- --dry
 Control which files are synced using glob patterns:
 
 **Via CLI flags:**
+
 ```bash
 # Exclude files
 npm run sync -- --exclude="node_modules/**" --exclude=".git/**"
@@ -294,29 +300,27 @@ npm run sync -- --exclude="config/*" --include="config/production.json"
 ```
 
 **Via config file:**
+
 ```javascript
 export default {
   // ... other config
-  exclude: [
-    "node_modules/**",
-    ".git/**",
-    "*.log",
-    "test/**"
-  ],
+  exclude: ['node_modules/**', '.git/**', '*.log', 'test/**'],
   include: [
-    "config/production.json",  // include this specific file
-    "assets/critical/**"        // include this directory even if excluded
-  ]
+    'config/production.json', // include this specific file
+    'assets/critical/**', // include this directory even if excluded
+  ],
 };
 ```
 
 **Via environment variables:**
+
 ```bash
 XSYNC_EXCLUDE="node_modules/**,.git/**,*.log"
 XSYNC_INCLUDE="config/production.json"
 ```
 
 **How it works:**
+
 - By default, all files are included
 - `exclude` patterns mark files to skip
 - `include` patterns override `exclude` - use this to include specific files that would otherwise be excluded
@@ -325,6 +329,7 @@ XSYNC_INCLUDE="config/production.json"
 - Patterns are matched against the relative file path from the local directory
 
 **Common patterns:**
+
 - `src/**/*.{js,ts}` all JS and TS files in src or src subdirectories
 - `**/*.log` - all .log files in any directory
 - `node_modules/**` - everything in node_modules
@@ -398,11 +403,11 @@ This bundles `src/cli.ts` → `dist/cli.cjs` using esbuild.
 
 ```javascript
 export default {
-  host: "192.168.1.100",
-  user: "root",
-  privateKeyPath: "~/.ssh/id_rsa",
-  remoteDir: "/var/www/myapp",
-  fast: true  // Optional: enable fast mode by default
+  host: '192.168.1.100',
+  user: 'root',
+  privateKeyPath: '~/.ssh/id_rsa',
+  remoteDir: '/var/www/myapp',
+  fast: true, // Optional: enable fast mode by default
 };
 ```
 
