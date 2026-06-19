@@ -35,12 +35,47 @@ Works on **Windows, macOS, and Linux**.
 
 ---
 
+## ⚡ Quick Start with npx
+
+No installation needed — run x-rsync directly with `npx`:
+
+```bash
+# Pull remote file list
+npx x-rsync pull --host=192.168.1.100 --username=root --remote=/var/www/myapp --privatekey=~/.ssh/id_rsa
+
+# Sync (pull if needed + push changes)
+npx x-rsync sync ./dist --host=192.168.1.100 --username=root --remote=/var/www/myapp --privatekey=~/.ssh/id_rsa
+
+# Push only
+npx x-rsync push ./dist --host=192.168.1.100 --username=root --remote=/var/www/myapp --privatekey=~/.ssh/id_rsa
+```
+
+All CLI flags:
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--host <address>` | | SFTP host IP or hostname |
+| `--port <number>` | `-p` | SFTP port (default: `22`) |
+| `--username <name>` | `-u` | SFTP username |
+| `--privatekey <path>` | | Path to OpenSSH private key |
+| `--password <password>` | | SFTP password (alternative to key) |
+| `--passphrase <passphrase>` | | Passphrase for encrypted private key |
+| `--remote <path>` | | Remote directory path |
+| `--manifest <path>` | `-m` | Manifest file path (default: `.xsync/manifest.json`) |
+| `--config <path>` | `-c` | Config file path |
+| `--delete` | `-d` | Delete remote files not present locally |
+| `--fast` | `-f` | Skip hashing, compare size+mtime only |
+| `--dry` | | Preview changes without uploading |
+| `--quiet` | `-q` | Disable logging |
+
+---
+
 ## 📦 Installing in Your Project
 
 In your project (the one you want to sync **from**):
 
 ```bash
-npm install -D x-rsync ssh2-sftp-client
+npm install -D x-rsync
 ```
 
 Add to your `package.json`:
