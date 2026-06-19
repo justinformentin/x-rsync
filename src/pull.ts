@@ -1,4 +1,6 @@
 // pull.ts
+// @ts-expect-error
+import cliProgress from 'cli-progress';
 import path from 'path';
 import { initSftp } from './lib/init-sftp.js';
 import { saveManifest } from './lib/manifest.js';
@@ -15,6 +17,7 @@ export interface PullOptions {
   passphrase?: string;
   remoteDir: string;
   quiet?: boolean;
+  progress?: boolean;
 }
 
 export async function pull(options: PullOptions, internal?: boolean) {
@@ -28,6 +31,7 @@ export async function pull(options: PullOptions, internal?: boolean) {
     password,
     remoteDir,
     passphrase,
+    progress = true,
   } = options;
 
   const sftp = await initSftp({
@@ -41,7 +45,24 @@ export async function pull(options: PullOptions, internal?: boolean) {
   });
 
   try {
-    const manifest = await scanRemoteDirectory(sftp, remoteDir);
+    const showProgress = progress && !options.quiet;
+    let bar: InstanceType<typeof cliProgress.SingleBar> | undefined;
+    if (showProgress) {
+      bar = new cliProgress.SingleBar(
+        { format: 'Scanning [{bar}] {value}/{total} files | {file}' },
+        cliProgress.Presets.shades_classic
+      );
+      bar.start(1, 0, { file: '' });
+    }
+    const onProgress = bar
+      ? (hashed: number, discovered: number, file: string) => {
+          bar!.setTotal(discovered);
+          bar!.update(hashed, { file });
+        }
+      : undefined;
+
+    const manifest = await scanRemoteDirectory(sftp, remoteDir, onProgress);
+    bar?.stop();
     logger.info(
       `Pull: found ${Object.keys(manifest.files).length} files on remote.`
     );

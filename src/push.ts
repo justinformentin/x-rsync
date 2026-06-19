@@ -24,6 +24,7 @@ export interface PushOptions {
   fast?: boolean;
   dry?: boolean;
   quiet?: boolean;
+  progress?: boolean;
   exclude?: string[];
   include?: string[];
 }
@@ -47,6 +48,7 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
     deleteExtra = false,
     fast = false,
     dry = false,
+    progress = true,
     exclude,
     include,
   } = options;
@@ -80,11 +82,14 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
     return;
   }
 
-  const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+  const showProgress = progress && !options.quiet;
+  const bar = showProgress
+    ? new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic)
+    : null;
 
   const barMax = toUpload.length + (toDelete.length || 0);
 
-  bar.start(barMax, 0);
+  bar?.start(barMax, 0);
 
   const sftp =
     pullRes?.sftp ||
@@ -106,7 +111,7 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
 
       await ensureRemoteDir(sftp, remoteDirPath);
       await sftp.fastPut(localPath, remotePath);
-      bar.increment();
+      bar?.increment();
     }
 
     if (deleteExtra) {
@@ -119,12 +124,12 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
             `Failed to delete ${remotePath}: ${(err as Error).message}`
           );
         }
-        bar.increment();
+        bar?.increment();
       }
       // Note: removing empty remote directories is more work; you can add it later if you want.
     }
   } finally {
-    bar.stop();
+    bar?.stop();
     await sftp.end();
     logger.info('Disconnected.');
   }

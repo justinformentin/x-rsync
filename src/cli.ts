@@ -45,6 +45,7 @@ Environment variables (override config file):
 function addCommonOptions(cmd: Command) {
   return cmd
     .option('-q, --quiet', 'Disable logging. Default false.', false)
+    .option('--no-progress', 'Disable progress indicator during remote scan.')
     .option(
       '-m, --manifest <path>',
       'Manifest file path',
@@ -83,6 +84,7 @@ addCommonOptions(
         remoteDir: config.remoteDir,
         manifestPath: options.manifest,
         quiet: config.quiet,
+        progress: options.progress,
       });
     })
 );
@@ -191,6 +193,7 @@ function buildOptions(config: any, localDir: string, cmdOptions: any) {
     fast: cmdOptions.fast ?? config.fast ?? false,
     dry: cmdOptions.dry ?? false,
     quiet: config.quiet,
+    progress: cmdOptions.progress,
     exclude: cmdOptions.exclude ?? config.exclude,
     include: cmdOptions.include ?? config.include,
   };

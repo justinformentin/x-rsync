@@ -67,6 +67,7 @@ All CLI flags:
 | `--fast`                    | `-f`  | Skip hashing, compare size+mtime only                |
 | `--dry`                     |       | Preview changes without uploading                    |
 | `--quiet`                   | `-q`  | Disable logging                                      |
+| `--no-progress`             |       | Disable progress bar during remote scan              |
 
 ---
 

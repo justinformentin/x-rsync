@@ -16,13 +16,16 @@ export async function hashRemoteFile(
 // Recursively walk the remote directory and build a Manifest
 export async function scanRemoteDirectory(
   sftp: SFTPClient,
-  baseRemoteDir: string
+  baseRemoteDir: string,
+  onProgress?: (hashed: number, discovered: number, currentFile: string) => void
 ): Promise<Manifest> {
   const files: Record<string, FileEntry> = {};
   const base = baseRemoteDir.replace(/\/+$/, ''); // strip trailing slash
+  let discovered = 0;
 
   async function walk(remotePath: string) {
     const list = await sftp.list(remotePath);
+    discovered += list.filter((item) => item.type === '-').length;
 
     for (const item of list) {
       const fullPath = `${remotePath.replace(/\/+$/, '')}/${item.name}`;
@@ -42,6 +45,8 @@ export async function scanRemoteDirectory(
           size: item.size,
           mtimeMs: item.modifyTime ?? 0,
         };
+
+        onProgress?.(Object.keys(files).length, discovered, rel);
       }
     }
   }

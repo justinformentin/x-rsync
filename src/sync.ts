@@ -17,6 +17,7 @@ export interface SyncOptions {
   fast?: boolean;
   dry?: boolean;
   quiet?: boolean;
+  progress?: boolean;
   exclude?: string[];
   include?: string[];
 }
