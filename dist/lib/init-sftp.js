@@ -1,6 +1,6 @@
 import fs from 'fs';
 import SFTPClient from 'ssh2-sftp-client';
-export async function initSftp({ host, port, username, privateKeyPath, password, passphrase, logger }) {
+export async function initSftp({ host, port, username, privateKeyPath, password, passphrase, logger, }) {
     const sftp = new SFTPClient();
     const connectConfig = {
         host,

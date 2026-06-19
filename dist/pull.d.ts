@@ -8,6 +8,7 @@ export interface PullOptions {
     passphrase?: string;
     remoteDir: string;
     quiet?: boolean;
+    progress?: boolean;
 }
 export declare function pull(options: PullOptions, internal?: boolean): Promise<{
     manifest: import("./types.js").Manifest;

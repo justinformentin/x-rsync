@@ -38,65 +38,55 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 
-// src/pull.ts
-var import_path2 = __toESM(require("path"), 1);
-
-// src/lib/manifest.ts
+// src/lib/config.ts
 var import_fs = __toESM(require("fs"), 1);
 var import_path = __toESM(require("path"), 1);
-async function saveManifest(filePath, manifest) {
-  await import_fs.default.promises.mkdir(import_path.default.dirname(filePath), { recursive: true });
-  await import_fs.default.promises.writeFile(
-    filePath,
-    JSON.stringify(manifest, null, 2),
-    "utf8"
-  );
-}
-async function loadManifest(filePath) {
-  try {
-    const data = await import_fs.default.promises.readFile(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    if (err.code === "ENOENT") return null;
-    throw err;
-  }
-}
-
-// src/lib/scan-remote.ts
-var import_crypto = __toESM(require("crypto"), 1);
-async function hashRemoteFile(sftp, remotePath) {
-  const buf = await sftp.get(remotePath);
-  const hash = import_crypto.default.createHash("sha256");
-  hash.update(buf);
-  return hash.digest("hex");
-}
-async function scanRemoteDirectory(sftp, baseRemoteDir) {
-  const files = {};
-  const base = baseRemoteDir.replace(/\/+$/, "");
-  async function walk(remotePath) {
-    const list = await sftp.list(remotePath);
-    for (const item of list) {
-      const fullPath = `${remotePath.replace(/\/+$/, "")}/${item.name}`;
-      if (item.type === "d") {
-        await walk(fullPath);
-      } else if (item.type === "-") {
-        const rel = fullPath.slice(base.length).replace(/^\/+/, "").replace(/\\/g, "/");
-        const hash = await hashRemoteFile(sftp, fullPath);
-        files[rel] = {
-          hash,
-          size: item.size,
-          mtimeMs: item.modifyTime ?? 0
-        };
+var import_url = require("url");
+var import_config = require("dotenv/config");
+async function loadConfig(configPath) {
+  const cwd = process.cwd();
+  const configFiles = ["xsync.config.ts", "xsync.config.js"];
+  if (configPath) configFiles.unshift(configPath);
+  for (const configFile of configFiles) {
+    const fullConfigPath = import_path.default.join(cwd, configFile);
+    if (import_fs.default.existsSync(fullConfigPath)) {
+      try {
+        const fileUrl = (0, import_url.pathToFileURL)(fullConfigPath).href;
+        const module2 = await import(fileUrl);
+        const config = module2.default || module2.config || module2;
+        return config;
+      } catch (err) {
+        console.warn(
+          `Failed to load config from ${configFile}:`,
+          err.message
+        );
       }
     }
   }
-  await walk(base);
+  return null;
+}
+function mergeConfig(configFile) {
+  const env = process.env;
+  const envExclude = env.XSYNC_EXCLUDE?.split(",").map((s) => s.trim());
+  const envInclude = env.XSYNC_INCLUDE?.split(",").map((s) => s.trim());
   return {
-    root: base,
-    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-    files
+    host: env.XSYNC_HOST || configFile?.host,
+    username: env.XSYNC_USER || configFile?.username,
+    port: env.XSYNC_PORT ? parseInt(env.XSYNC_PORT, 10) : configFile?.port || 22,
+    remoteDir: env.XSYNC_REMOTE_DIR || configFile?.remoteDir,
+    privateKeyPath: env.XSYNC_PRIVATE_KEY_PATH || configFile?.privateKeyPath,
+    password: env.XSYNC_PASSWORD || configFile?.password,
+    passphrase: env.XSYNC_PASSPHRASE || configFile?.passphrase,
+    delete: !!process.env.XSYNC_DELETE || configFile?.delete || false,
+    fast: configFile?.fast || false,
+    exclude: envExclude || configFile?.exclude,
+    include: envInclude || configFile?.include
   };
 }
+
+// src/pull.ts
+var import_cli_progress = __toESM(require("cli-progress"), 1);
+var import_path3 = __toESM(require("path"), 1);
 
 // src/lib/init-sftp.ts
 var import_fs2 = __toESM(require("fs"), 1);
@@ -141,6 +131,66 @@ and point XSYNC_PRIVATE_KEY_PATH at that file instead.`
   return sftp;
 }
 
+// src/lib/manifest.ts
+var import_fs3 = __toESM(require("fs"), 1);
+var import_path2 = __toESM(require("path"), 1);
+async function saveManifest(filePath, manifest) {
+  await import_fs3.default.promises.mkdir(import_path2.default.dirname(filePath), { recursive: true });
+  await import_fs3.default.promises.writeFile(
+    filePath,
+    JSON.stringify(manifest, null, 2),
+    "utf8"
+  );
+}
+async function loadManifest(filePath) {
+  try {
+    const data = await import_fs3.default.promises.readFile(filePath, "utf8");
+    return JSON.parse(data);
+  } catch (err) {
+    if (err.code === "ENOENT") return null;
+    throw err;
+  }
+}
+
+// src/lib/scan-remote.ts
+var import_crypto = __toESM(require("crypto"), 1);
+async function hashRemoteFile(sftp, remotePath) {
+  const buf = await sftp.get(remotePath);
+  const hash = import_crypto.default.createHash("sha256");
+  hash.update(buf);
+  return hash.digest("hex");
+}
+async function scanRemoteDirectory(sftp, baseRemoteDir, onProgress) {
+  const files = {};
+  const base = baseRemoteDir.replace(/\/+$/, "");
+  let discovered = 0;
+  async function walk(remotePath) {
+    const list = await sftp.list(remotePath);
+    discovered += list.filter((item) => item.type === "-").length;
+    for (const item of list) {
+      const fullPath = `${remotePath.replace(/\/+$/, "")}/${item.name}`;
+      if (item.type === "d") {
+        await walk(fullPath);
+      } else if (item.type === "-") {
+        const rel = fullPath.slice(base.length).replace(/^\/+/, "").replace(/\\/g, "/");
+        const hash = await hashRemoteFile(sftp, fullPath);
+        files[rel] = {
+          hash,
+          size: item.size,
+          mtimeMs: item.modifyTime ?? 0
+        };
+        onProgress?.(Object.keys(files).length, discovered, rel);
+      }
+    }
+  }
+  await walk(base);
+  return {
+    root: base,
+    generatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    files
+  };
+}
+
 // src/logger.ts
 var Logger = class {
   constructor(quiet = false) {
@@ -161,14 +211,15 @@ var Logger = class {
 async function pull(options, internal) {
   const logger = new Logger(options.quiet);
   const {
-    manifestPath = import_path2.default.resolve(process.cwd(), ".xsync", "manifest.json"),
+    manifestPath = import_path3.default.resolve(process.cwd(), ".xsync", "manifest.json"),
     host,
     port = 22,
     username,
     privateKeyPath,
     password,
     remoteDir,
-    passphrase
+    passphrase,
+    progress = true
   } = options;
   const sftp = await initSftp({
     host,
@@ -180,7 +231,21 @@ async function pull(options, internal) {
     logger
   });
   try {
-    const manifest = await scanRemoteDirectory(sftp, remoteDir);
+    const showProgress = progress && !options.quiet;
+    let bar;
+    if (showProgress) {
+      bar = new import_cli_progress.default.SingleBar(
+        { format: "Scanning [{bar}] {value}/{total} files | {file}" },
+        import_cli_progress.default.Presets.shades_classic
+      );
+      bar.start(1, 0, { file: "" });
+    }
+    const onProgress = bar ? (hashed, discovered, file) => {
+      bar.setTotal(discovered);
+      bar.update(hashed, { file });
+    } : void 0;
+    const manifest = await scanRemoteDirectory(sftp, remoteDir, onProgress);
+    bar?.stop();
     logger.info(
       `Pull: found ${Object.keys(manifest.files).length} files on remote.`
     );
@@ -194,15 +259,55 @@ async function pull(options, internal) {
 }
 
 // src/push.ts
-var import_path4 = __toESM(require("path"), 1);
+var import_cli_progress2 = __toESM(require("cli-progress"), 1);
+var import_path5 = __toESM(require("path"), 1);
+
+// src/lib/compute-diff.ts
+function computeDiff(prev, next, fast = false) {
+  const toUpload = [];
+  const toDelete = [];
+  const prevFiles = prev?.files ?? {};
+  const nextFiles = next.files;
+  for (const [relPath, entry] of Object.entries(nextFiles)) {
+    const prevEntry = prevFiles[relPath];
+    if (!prevEntry) {
+      toUpload.push(relPath);
+    } else if (fast) {
+      if (prevEntry.size !== entry.size || prevEntry.mtimeMs !== entry.mtimeMs) {
+        toUpload.push(relPath);
+      }
+    } else {
+      if (prevEntry.hash !== entry.hash) {
+        toUpload.push(relPath);
+      }
+    }
+  }
+  for (const relPath of Object.keys(prevFiles)) {
+    if (!nextFiles[relPath]) {
+      toDelete.push(relPath);
+    }
+  }
+  return { toUpload, toDelete };
+}
+
+// src/lib/ensure-remote-dir.ts
+async function ensureRemoteDir(sftp, remotePath) {
+  const segments = remotePath.split("/").filter(Boolean);
+  let current = "";
+  for (const seg of segments) {
+    current += `/${seg}`;
+    try {
+      await sftp.mkdir(current, true);
+    } catch {
+    }
+  }
+}
 
 // src/lib/scan-local.ts
-var import_fs3 = __toESM(require("fs"), 1);
-var import_path3 = __toESM(require("path"), 1);
-var import_promises = require("stream/promises");
 var import_crypto2 = require("crypto");
+var import_fs4 = __toESM(require("fs"), 1);
 
-// node_modules/.pnpm/@isaacs+balanced-match@4.0.1/node_modules/@isaacs/balanced-match/dist/esm/index.js
+// node_modules/@isaacs/balanced-match/dist/esm/index.js
 var balanced = (a, b, str) => {
   const ma = a instanceof RegExp ? maybeMatch(a, str) : a;
   const mb = b instanceof RegExp ? maybeMatch(b, str) : b;
@@ -255,7 +360,7 @@ var range = (a, b, str) => {
   return result;
 };
 
-// node_modules/.pnpm/@isaacs+brace-expansion@5.0.0/node_modules/@isaacs/brace-expansion/dist/esm/index.js
+// node_modules/@isaacs/brace-expansion/dist/esm/index.js
 var escSlash = "\0SLASH" + Math.random() + "\0";
 var escOpen = "\0OPEN" + Math.random() + "\0";
 var escClose = "\0CLOSE" + Math.random() + "\0";
@@ -413,7 +518,7 @@ function expand_(str, isTop) {
   return expansions;
 }
 
-// node_modules/.pnpm/minimatch@10.1.1/node_modules/minimatch/dist/esm/assert-valid-pattern.js
+// node_modules/minimatch/dist/esm/assert-valid-pattern.js
 var MAX_PATTERN_LENGTH = 1024 * 64;
 var assertValidPattern = (pattern) => {
   if (typeof pattern !== "string") {
@@ -424,7 +529,7 @@ var assertValidPattern = (pattern) => {
   }
 };
 
-// node_modules/.pnpm/minimatch@10.1.1/node_modules/minimatch/dist/esm/brace-expressions.js
+// node_modules/minimatch/dist/esm/brace-expressions.js
 var posixClasses = {
   "[:alnum:]": ["\\p{L}\\p{Nl}\\p{Nd}", true],
   "[:alpha:]": ["\\p{L}\\p{Nl}", true],
@@ -533,7 +638,7 @@ var parseClass = (glob, position) => {
   return [comb, uflag, endPos - pos, true];
 };
 
-// node_modules/.pnpm/minimatch@10.1.1/node_modules/minimatch/dist/esm/unescape.js
+// node_modules/minimatch/dist/esm/unescape.js
 var unescape = (s, { windowsPathsNoEscape = false, magicalBraces = true } = {}) => {
   if (magicalBraces) {
     return windowsPathsNoEscape ? s.replace(/\[([^\/\\])\]/g, "$1") : s.replace(/((?!\\).|^)\[([^\/\\])\]/g, "$1$2").replace(/\\([^\/])/g, "$1");
@@ -541,7 +646,7 @@ var unescape = (s, { windowsPathsNoEscape = false, magicalBraces = true } = {}) 
   return windowsPathsNoEscape ? s.replace(/\[([^\/\\{}])\]/g, "$1") : s.replace(/((?!\\).|^)\[([^\/\\{}])\]/g, "$1$2").replace(/\\([^\/{}])/g, "$1");
 };
 
-// node_modules/.pnpm/minimatch@10.1.1/node_modules/minimatch/dist/esm/ast.js
+// node_modules/minimatch/dist/esm/ast.js
 var types = /* @__PURE__ */ new Set(["!", "?", "+", "*", "@"]);
 var isExtglobType = (c) => types.has(c);
 var startNoTraversal = "(?!(?:^|/)\\.\\.?(?:$|/))";
@@ -1017,7 +1122,7 @@ var AST = class _AST {
   }
 };
 
-// node_modules/.pnpm/minimatch@10.1.1/node_modules/minimatch/dist/esm/escape.js
+// node_modules/minimatch/dist/esm/escape.js
 var escape = (s, { windowsPathsNoEscape = false, magicalBraces = false } = {}) => {
   if (magicalBraces) {
     return windowsPathsNoEscape ? s.replace(/[?*()[\]{}]/g, "[$&]") : s.replace(/[?*()[\]\\{}]/g, "\\$&");
@@ -1025,7 +1130,7 @@ var escape = (s, { windowsPathsNoEscape = false, magicalBraces = false } = {}) =
   return windowsPathsNoEscape ? s.replace(/[?*()[\]]/g, "[$&]") : s.replace(/[?*()[\]\\]/g, "\\$&");
 };
 
-// node_modules/.pnpm/minimatch@10.1.1/node_modules/minimatch/dist/esm/index.js
+// node_modules/minimatch/dist/esm/index.js
 var minimatch = (p, pattern, options = {}) => {
   assertValidPattern(pattern);
   if (!options.nocomment && pattern.charAt(0) === "#") {
@@ -1084,13 +1189,13 @@ var qmarksTestNoExtDot = ([$0]) => {
   return (f) => f.length === len && f !== "." && f !== "..";
 };
 var defaultPlatform = typeof process === "object" && process ? typeof process.env === "object" && process.env && process.env.__MINIMATCH_TESTING_PLATFORM__ || process.platform : "posix";
-var path3 = {
+var path4 = {
   win32: { sep: "\\" },
   posix: { sep: "/" }
 };
-var sep = defaultPlatform === "win32" ? path3.win32.sep : path3.posix.sep;
+var sep = defaultPlatform === "win32" ? path4.win32.sep : path4.posix.sep;
 minimatch.sep = sep;
-var GLOBSTAR = Symbol("globstar **");
+var GLOBSTAR = /* @__PURE__ */ Symbol("globstar **");
 minimatch.GLOBSTAR = GLOBSTAR;
 var qmark2 = "[^/]";
 var star2 = qmark2 + "*?";
@@ -1755,9 +1860,11 @@ minimatch.escape = escape;
 minimatch.unescape = unescape;
 
 // src/lib/scan-local.ts
+var import_path4 = __toESM(require("path"), 1);
+var import_promises = require("stream/promises");
 async function hashLocalFile(filePath) {
   const hash = (0, import_crypto2.createHash)("sha256");
-  await (0, import_promises.pipeline)(import_fs3.default.createReadStream(filePath), hash);
+  await (0, import_promises.pipeline)(import_fs4.default.createReadStream(filePath), hash);
   return hash.digest("hex");
 }
 var initShouldInclude = ({ include, exclude }) => (relPath) => {
@@ -1778,20 +1885,20 @@ var initShouldInclude = ({ include, exclude }) => (relPath) => {
 };
 async function scanLocalDirectory(root, fast = false, exclude, include) {
   const files = {};
-  const rootAbs = import_path3.default.resolve(root);
+  const rootAbs = import_path4.default.resolve(root);
   const shouldIncludeFile = initShouldInclude({ include, exclude });
   async function walk(current) {
-    const entries = await import_fs3.default.promises.readdir(current, { withFileTypes: true });
+    const entries = await import_fs4.default.promises.readdir(current, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = import_path3.default.join(current, entry.name);
-      const relPath = import_path3.default.relative(rootAbs, fullPath).split(import_path3.default.sep).join("/");
+      const fullPath = import_path4.default.join(current, entry.name);
+      const relPath = import_path4.default.relative(rootAbs, fullPath).split(import_path4.default.sep).join("/");
       if (entry.isDirectory()) {
         if (shouldIncludeFile(relPath) || shouldIncludeFile(relPath + "/")) {
           await walk(fullPath);
         }
       } else if (entry.isFile()) {
         if (shouldIncludeFile(relPath)) {
-          const stat = await import_fs3.default.promises.stat(fullPath);
+          const stat = await import_fs4.default.promises.stat(fullPath);
           const hash = fast ? "" : await hashLocalFile(fullPath);
           files[relPath] = {
             hash,
@@ -1811,54 +1918,10 @@ async function scanLocalDirectory(root, fast = false, exclude, include) {
 }
 
 // src/push.ts
-var import_cli_progress = __toESM(require("cli-progress"), 1);
-
-// src/lib/compute-diff.ts
-function computeDiff(prev, next, fast = false) {
-  const toUpload = [];
-  const toDelete = [];
-  const prevFiles = prev?.files ?? {};
-  const nextFiles = next.files;
-  for (const [relPath, entry] of Object.entries(nextFiles)) {
-    const prevEntry = prevFiles[relPath];
-    if (!prevEntry) {
-      toUpload.push(relPath);
-    } else if (fast) {
-      if (prevEntry.size !== entry.size || prevEntry.mtimeMs !== entry.mtimeMs) {
-        toUpload.push(relPath);
-      }
-    } else {
-      if (prevEntry.hash !== entry.hash) {
-        toUpload.push(relPath);
-      }
-    }
-  }
-  for (const relPath of Object.keys(prevFiles)) {
-    if (!nextFiles[relPath]) {
-      toDelete.push(relPath);
-    }
-  }
-  return { toUpload, toDelete };
-}
-
-// src/lib/ensure-remote-dir.ts
-async function ensureRemoteDir(sftp, remotePath) {
-  const segments = remotePath.split("/").filter(Boolean);
-  let current = "";
-  for (const seg of segments) {
-    current += `/${seg}`;
-    try {
-      await sftp.mkdir(current, true);
-    } catch {
-    }
-  }
-}
-
-// src/push.ts
 async function push(options, pullRes) {
   const {
     localDir,
-    manifestPath = import_path4.default.resolve(process.cwd(), ".xsync", "manifest.json"),
+    manifestPath = import_path5.default.resolve(process.cwd(), ".xsync", "manifest.json"),
     host,
     port = 22,
     username,
@@ -1869,10 +1932,11 @@ async function push(options, pullRes) {
     deleteExtra = false,
     fast = false,
     dry = false,
+    progress = true,
     exclude,
     include
   } = options;
-  const localRoot = import_path4.default.resolve(localDir);
+  const localRoot = import_path5.default.resolve(localDir);
   const logger = new Logger(options.quiet);
   logger.info(
     `Scanning local directory: ${localRoot}${fast ? " (fast mode)" : ""}${dry ? " (dry run)" : ""}`
@@ -1892,9 +1956,10 @@ async function push(options, pullRes) {
     logger.info("No changes made (dry run).");
     return;
   }
-  const bar = new import_cli_progress.default.SingleBar({}, import_cli_progress.default.Presets.shades_classic);
+  const showProgress = progress && !options.quiet;
+  const bar = showProgress ? new import_cli_progress2.default.SingleBar({}, import_cli_progress2.default.Presets.shades_classic) : null;
   const barMax = toUpload.length + (toDelete.length || 0);
-  bar.start(barMax, 0);
+  bar?.start(barMax, 0);
   const sftp = pullRes?.sftp || await initSftp({
     host,
     port,
@@ -1906,12 +1971,12 @@ async function push(options, pullRes) {
   });
   try {
     for (const rel of toUpload) {
-      const localPath = import_path4.default.join(localRoot, rel);
+      const localPath = import_path5.default.join(localRoot, rel);
       const remotePath = `${remoteDir}/${rel}`.replace(/\\/g, "/");
       const remoteDirPath = remotePath.split("/").slice(0, -1).join("/");
       await ensureRemoteDir(sftp, remoteDirPath);
       await sftp.fastPut(localPath, remotePath);
-      bar.increment();
+      bar?.increment();
     }
     if (deleteExtra) {
       for (const rel of toDelete) {
@@ -1923,11 +1988,11 @@ async function push(options, pullRes) {
             `Failed to delete ${remotePath}: ${err.message}`
           );
         }
-        bar.increment();
+        bar?.increment();
       }
     }
   } finally {
-    bar.stop();
+    bar?.stop();
     await sftp.end();
     logger.info("Disconnected.");
   }
@@ -1937,9 +2002,9 @@ async function push(options, pullRes) {
 }
 
 // src/sync.ts
-var import_path5 = __toESM(require("path"), 1);
+var import_path6 = __toESM(require("path"), 1);
 async function sync(options) {
-  const manifestPath = options.manifestPath || import_path5.default.resolve(process.cwd(), ".xsync", "manifest.json");
+  const manifestPath = options.manifestPath || import_path6.default.resolve(process.cwd(), ".xsync", "manifest.json");
   const prevManifest = await loadManifest(manifestPath);
   let sftp, manifest;
   if (!prevManifest) {
@@ -1948,52 +2013,6 @@ async function sync(options) {
     manifest = pullRes?.manifest;
   }
   await push(options, { manifest, sftp });
-}
-
-// src/lib/config.ts
-var import_fs4 = __toESM(require("fs"), 1);
-var import_path6 = __toESM(require("path"), 1);
-var import_url = require("url");
-var import_config = require("dotenv/config");
-async function loadConfig(configPath) {
-  const cwd = process.cwd();
-  const configFiles = ["xsync.config.ts", "xsync.config.js"];
-  if (configPath) configFiles.unshift(configPath);
-  for (const configFile of configFiles) {
-    const fullConfigPath = import_path6.default.join(cwd, configFile);
-    if (import_fs4.default.existsSync(fullConfigPath)) {
-      try {
-        const fileUrl = (0, import_url.pathToFileURL)(fullConfigPath).href;
-        const module2 = await import(fileUrl);
-        const config = module2.default || module2.config || module2;
-        return config;
-      } catch (err) {
-        console.warn(
-          `Failed to load config from ${configFile}:`,
-          err.message
-        );
-      }
-    }
-  }
-  return null;
-}
-function mergeConfig(configFile) {
-  const env = process.env;
-  const envExclude = env.XSYNC_EXCLUDE?.split(",").map((s) => s.trim());
-  const envInclude = env.XSYNC_INCLUDE?.split(",").map((s) => s.trim());
-  return {
-    host: env.XSYNC_HOST || configFile?.host,
-    username: env.XSYNC_USER || configFile?.username,
-    port: env.XSYNC_PORT ? parseInt(env.XSYNC_PORT, 10) : configFile?.port || 22,
-    remoteDir: env.XSYNC_REMOTE_DIR || configFile?.remoteDir,
-    privateKeyPath: env.XSYNC_PRIVATE_KEY_PATH || configFile?.privateKeyPath,
-    password: env.XSYNC_PASSWORD || configFile?.password,
-    passphrase: env.XSYNC_PASSPHRASE || configFile?.passphrase,
-    delete: !!process.env.XSYNC_DELETE || configFile?.delete || false,
-    fast: configFile?.fast || false,
-    exclude: envExclude || configFile?.exclude,
-    include: envInclude || configFile?.include
-  };
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

@@ -1,5 +1,5 @@
-import { Manifest } from './types.js';
 import type SFTPClient from 'ssh2-sftp-client';
+import type { Manifest } from './types.js';
 export interface PushOptions {
     localDir: string;
     manifestPath?: string;
@@ -14,6 +14,7 @@ export interface PushOptions {
     fast?: boolean;
     dry?: boolean;
     quiet?: boolean;
+    progress?: boolean;
     exclude?: string[];
     include?: string[];
 }

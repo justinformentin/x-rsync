@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { sync } from './sync.js';
+import { loadConfig, mergeConfig } from './lib/config.js';
 import { pull } from './pull.js';
 import { push } from './push.js';
-import { loadConfig, mergeConfig } from './lib/config.js';
+import { sync } from './sync.js';
 const program = new Command();
 program
     .name('x-rsync')
@@ -39,6 +39,7 @@ Environment variables (override config file):
 function addCommonOptions(cmd) {
     return cmd
         .option('-q, --quiet', 'Disable logging. Default false.', false)
+        .option('--no-progress', 'Disable progress indicator during remote scan.')
         .option('-m, --manifest <path>', 'Manifest file path', './.xsync/manifest.json')
         .option('-c, --config <path>', 'Config file path', './xsync.config.{js,ts}')
         .option('--host <address>', 'SFTP host IP Address')
@@ -65,6 +66,7 @@ addCommonOptions(program
         remoteDir: config.remoteDir,
         manifestPath: options.manifest,
         quiet: config.quiet,
+        progress: options.progress,
     });
 }));
 function registerFileCommand(name, description, action) {
@@ -133,6 +135,7 @@ function buildOptions(config, localDir, cmdOptions) {
         fast: cmdOptions.fast ?? config.fast ?? false,
         dry: cmdOptions.dry ?? false,
         quiet: config.quiet,
+        progress: cmdOptions.progress,
         exclude: cmdOptions.exclude ?? config.exclude,
         include: cmdOptions.include ?? config.include,
     };

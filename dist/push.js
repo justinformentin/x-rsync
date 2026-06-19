@@ -1,14 +1,14 @@
-import path from 'path';
-import { saveManifest, loadManifest } from './lib/manifest.js';
-import { scanLocalDirectory } from './lib/scan-local.js';
-// @ts-ignore
+// @ts-expect-error
 import cliProgress from 'cli-progress';
-import { initSftp } from './lib/init-sftp.js';
+import path from 'path';
 import { computeDiff } from './lib/compute-diff.js';
 import { ensureRemoteDir } from './lib/ensure-remote-dir.js';
+import { initSftp } from './lib/init-sftp.js';
+import { loadManifest, saveManifest } from './lib/manifest.js';
+import { scanLocalDirectory } from './lib/scan-local.js';
 import { Logger } from './logger.js';
 export async function push(options, pullRes) {
-    const { localDir, manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, passphrase, remoteDir, deleteExtra = false, fast = false, dry = false, exclude, include, } = options;
+    const { localDir, manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, passphrase, remoteDir, deleteExtra = false, fast = false, dry = false, progress = true, exclude, include, } = options;
     const localRoot = path.resolve(localDir);
     const logger = new Logger(options.quiet);
     logger.info(`Scanning local directory: ${localRoot}${fast ? ' (fast mode)' : ''}${dry ? ' (dry run)' : ''}`);
@@ -20,9 +20,12 @@ export async function push(options, pullRes) {
         logger.info('No changes made (dry run).');
         return;
     }
-    const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+    const showProgress = progress && !options.quiet;
+    const bar = showProgress
+        ? new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic)
+        : null;
     const barMax = toUpload.length + (toDelete.length || 0);
-    bar.start(barMax, 0);
+    bar?.start(barMax, 0);
     const sftp = pullRes?.sftp ||
         (await initSftp({
             host,
@@ -31,7 +34,7 @@ export async function push(options, pullRes) {
             privateKeyPath,
             password,
             passphrase,
-            logger
+            logger,
         }));
     try {
         for (const rel of toUpload) {
@@ -40,7 +43,7 @@ export async function push(options, pullRes) {
             const remoteDirPath = remotePath.split('/').slice(0, -1).join('/');
             await ensureRemoteDir(sftp, remoteDirPath);
             await sftp.fastPut(localPath, remotePath);
-            bar.increment();
+            bar?.increment();
         }
         if (deleteExtra) {
             for (const rel of toDelete) {
@@ -51,13 +54,13 @@ export async function push(options, pullRes) {
                 catch (err) {
                     logger.warn(`Failed to delete ${remotePath}: ${err.message}`);
                 }
-                bar.increment();
+                bar?.increment();
             }
             // Note: removing empty remote directories is more work; you can add it later if you want.
         }
     }
     finally {
-        bar.stop();
+        bar?.stop();
         await sftp.end();
         logger.info('Disconnected.');
     }

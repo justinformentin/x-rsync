@@ -1,12 +1,14 @@
 // pull.ts
+// @ts-expect-error
+import cliProgress from 'cli-progress';
 import path from 'path';
+import { initSftp } from './lib/init-sftp.js';
 import { saveManifest } from './lib/manifest.js';
 import { scanRemoteDirectory } from './lib/scan-remote.js';
-import { initSftp } from './lib/init-sftp.js';
 import { Logger } from './logger.js';
 export async function pull(options, internal) {
     const logger = new Logger(options.quiet);
-    const { manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, remoteDir, passphrase } = options;
+    const { manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'), host, port = 22, username, privateKeyPath, password, remoteDir, passphrase, progress = true, } = options;
     const sftp = await initSftp({
         host,
         port,
@@ -14,10 +16,23 @@ export async function pull(options, internal) {
         privateKeyPath,
         password,
         passphrase,
-        logger
+        logger,
     });
     try {
-        const manifest = await scanRemoteDirectory(sftp, remoteDir);
+        const showProgress = progress && !options.quiet;
+        let bar;
+        if (showProgress) {
+            bar = new cliProgress.SingleBar({ format: 'Scanning [{bar}] {value}/{total} files | {file}' }, cliProgress.Presets.shades_classic);
+            bar.start(1, 0, { file: '' });
+        }
+        const onProgress = bar
+            ? (hashed, discovered, file) => {
+                bar.setTotal(discovered);
+                bar.update(hashed, { file });
+            }
+            : undefined;
+        const manifest = await scanRemoteDirectory(sftp, remoteDir, onProgress);
+        bar?.stop();
         logger.info(`Pull: found ${Object.keys(manifest.files).length} files on remote.`);
         await saveManifest(manifestPath, manifest);
         logger.info(`Pull: wrote manifest to ${manifestPath}`);

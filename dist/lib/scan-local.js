@@ -1,8 +1,8 @@
+import { createHash } from 'crypto';
 import fs from 'fs';
+import { minimatch } from 'minimatch';
 import path from 'path';
 import { pipeline } from 'stream/promises';
-import { createHash } from 'crypto';
-import { minimatch } from 'minimatch';
 export async function hashLocalFile(filePath) {
     const hash = createHash('sha256');
     await pipeline(fs.createReadStream(filePath), hash);

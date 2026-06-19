@@ -7,11 +7,13 @@ export async function hashRemoteFile(sftp, remotePath) {
     return hash.digest('hex');
 }
 // Recursively walk the remote directory and build a Manifest
-export async function scanRemoteDirectory(sftp, baseRemoteDir) {
+export async function scanRemoteDirectory(sftp, baseRemoteDir, onProgress) {
     const files = {};
     const base = baseRemoteDir.replace(/\/+$/, ''); // strip trailing slash
+    let discovered = 0;
     async function walk(remotePath) {
         const list = await sftp.list(remotePath);
+        discovered += list.filter((item) => item.type === '-').length;
         for (const item of list) {
             const fullPath = `${remotePath.replace(/\/+$/, '')}/${item.name}`;
             if (item.type === 'd') {
@@ -28,6 +30,7 @@ export async function scanRemoteDirectory(sftp, baseRemoteDir) {
                     size: item.size,
                     mtimeMs: item.modifyTime ?? 0,
                 };
+                onProgress?.(Object.keys(files).length, discovered, rel);
             }
         }
     }
