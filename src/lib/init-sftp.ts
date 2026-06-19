@@ -9,7 +9,7 @@ type InitSftpArgs = {
   privateKeyPath?: string;
   password?: string;
   passphrase?: string;
-  logger: Logger
+  logger: Logger;
 };
 
 export async function initSftp({
@@ -19,7 +19,7 @@ export async function initSftp({
   privateKeyPath,
   password,
   passphrase,
-  logger
+  logger,
 }: InitSftpArgs) {
   const sftp = new SFTPClient();
 
@@ -46,13 +46,13 @@ export async function initSftp({
     throw new Error('Either privateKeyPath or password must be provided');
   }
 
-  if(passphrase){
+  if (passphrase) {
     connectConfig.passphrase = passphrase;
   }
 
   logger.info(`Connecting to ${username}@${host}:${port}...`);
   await sftp.connect(connectConfig);
- logger.info('Connected.');
+  logger.info('Connected.');
 
   return sftp;
 }

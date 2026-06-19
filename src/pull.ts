@@ -12,13 +12,13 @@ export interface PullOptions {
   username: string;
   privateKeyPath?: string;
   password?: string;
-  passphrase?:string;
+  passphrase?: string;
   remoteDir: string;
   quiet?: boolean;
 }
 
 export async function pull(options: PullOptions, internal?: boolean) {
-  const logger = new Logger(options.quiet)
+  const logger = new Logger(options.quiet);
   const {
     manifestPath = path.resolve(process.cwd(), '.xsync', 'manifest.json'),
     host,
@@ -27,7 +27,7 @@ export async function pull(options: PullOptions, internal?: boolean) {
     privateKeyPath,
     password,
     remoteDir,
-    passphrase
+    passphrase,
   } = options;
 
   const sftp = await initSftp({
@@ -37,7 +37,7 @@ export async function pull(options: PullOptions, internal?: boolean) {
     privateKeyPath,
     password,
     passphrase,
-    logger
+    logger,
   });
 
   try {

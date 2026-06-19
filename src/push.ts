@@ -95,7 +95,7 @@ export async function push(options: PushOptions, pullRes?: PullRes) {
       privateKeyPath,
       password,
       passphrase,
-      logger
+      logger,
     }));
 
   try {

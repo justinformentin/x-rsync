@@ -21,12 +21,14 @@ export interface XSyncConfig {
  * Load configuration from xsync.config.{ts,js} file
  * Tries to find and load the config file from the current working directory
  */
-export async function loadConfig(configPath?:string): Promise<XSyncConfig | null> {
+export async function loadConfig(
+  configPath?: string
+): Promise<XSyncConfig | null> {
   const cwd = process.cwd();
 
   // Try to find config file in order of preference
   const configFiles = ['xsync.config.ts', 'xsync.config.js'];
-  if(configPath) configFiles.unshift(configPath)
+  if (configPath) configFiles.unshift(configPath);
   for (const configFile of configFiles) {
     const fullConfigPath = path.join(cwd, configFile);
 
