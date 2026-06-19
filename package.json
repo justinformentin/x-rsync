@@ -1,64 +1,64 @@
 {
-  "name": "x-rsync",
-  "version": "0.1.1",
-  "description": "A tiny rsync-style tool using SFTP + SHA-256 diffing. Push only changed files to remote servers.",
-  "keywords": [
-    "sftp",
-    "deploy",
-    "sync",
-    "rsync",
-    "ssh",
-    "file-sync"
-  ],
-  "author": "Justin Formentin",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/justinformentin/x-rsync"
-  },
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "bin": {
-    "x-rsync": "./dist/cli.js"
-  },
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
-    }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "scripts": {
-    "build": "node scripts/build.js",
-    "prepublishOnly": "npm run build",
-    "lint": "biome check .",
-    "lint:fix": "biome check . --write",
-    "fmt": "prettier . --write"
-  },
-  "dependencies": {
-    "chalk": "^5.6.2",
-    "cli-progress": "^3.12.0",
-    "commander": "^14.0.2",
-    "dotenv": "^17.2.3",
-    "minimatch": "^10.1.1",
-    "ssh2-sftp-client": "^10.0.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.5.0",
-    "@types/node": "^22.0.0",
-    "@types/ssh2-sftp-client": "^9.0.6",
-    "esbuild": "^0.27.0",
-    "prettier": "^3.8.4",
-    "typescript": "^5.6.0"
-  }
+	"name": "x-rsync",
+	"version": "0.1.1",
+	"description": "A tiny rsync-style tool using SFTP + SHA-256 diffing. Push only changed files to remote servers.",
+	"keywords": [
+		"sftp",
+		"deploy",
+		"sync",
+		"rsync",
+		"ssh",
+		"file-sync"
+	],
+	"author": "Justin Formentin",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/justinformentin/x-rsync"
+	},
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"bin": {
+		"x-rsync": "./dist/cli.js"
+	},
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			},
+			"require": {
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
+			}
+		}
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "node scripts/build.js",
+		"prepublishOnly": "npm run build",
+		"lint": "biome check .",
+		"lint:fix": "biome check . --write",
+		"fmt": "prettier . --write"
+	},
+	"dependencies": {
+		"chalk": "^5.6.2",
+		"cli-progress": "^3.12.0",
+		"commander": "^14.0.2",
+		"dotenv": "^17.2.3",
+		"minimatch": "^10.1.1",
+		"ssh2-sftp-client": "^10.0.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.0",
+		"@types/node": "^22.0.0",
+		"@types/ssh2-sftp-client": "^9.0.6",
+		"esbuild": "^0.27.0",
+		"prettier": "^3.8.4",
+		"typescript": "^5.6.0"
+	}
 }

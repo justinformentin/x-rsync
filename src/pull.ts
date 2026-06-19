@@ -1,8 +1,8 @@
 // pull.ts
 import path from 'path';
+import { initSftp } from './lib/init-sftp.js';
 import { saveManifest } from './lib/manifest.js';
 import { scanRemoteDirectory } from './lib/scan-remote.js';
-import { initSftp } from './lib/init-sftp.js';
 import { Logger } from './logger.js';
 
 export interface PullOptions {

@@ -1,7 +1,7 @@
+import path from 'path';
+import { loadManifest } from './lib/manifest.js';
 import { pull } from './pull.js';
 import { push } from './push.js';
-import { loadManifest } from './lib/manifest.js';
-import path from 'path';
 
 export interface SyncOptions {
   localDir: string;

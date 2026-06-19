@@ -1,14 +1,14 @@
-import path from 'path';
-import { saveManifest, loadManifest } from './lib/manifest.js';
-import { scanLocalDirectory } from './lib/scan-local.js';
-// @ts-ignore
+// @ts-expect-error
 import cliProgress from 'cli-progress';
-import { initSftp } from './lib/init-sftp.js';
+import path from 'path';
+import type SFTPClient from 'ssh2-sftp-client';
 import { computeDiff } from './lib/compute-diff.js';
 import { ensureRemoteDir } from './lib/ensure-remote-dir.js';
-import { Manifest } from './types.js';
-import type SFTPClient from 'ssh2-sftp-client';
+import { initSftp } from './lib/init-sftp.js';
+import { loadManifest, saveManifest } from './lib/manifest.js';
+import { scanLocalDirectory } from './lib/scan-local.js';
 import { Logger } from './logger.js';
+import type { Manifest } from './types.js';
 
 export interface PushOptions {
   localDir: string;

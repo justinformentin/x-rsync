@@ -1,4 +1,4 @@
-import SFTPClient from 'ssh2-sftp-client';
+import type SFTPClient from 'ssh2-sftp-client';
 
 export async function ensureRemoteDir(sftp: SFTPClient, remotePath: string) {
   const segments = remotePath.split('/').filter(Boolean);

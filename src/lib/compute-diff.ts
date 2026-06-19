@@ -1,4 +1,4 @@
-import { Manifest } from '../types.js';
+import type { Manifest } from '../types.js';
 
 export function computeDiff(
   prev: Manifest | null,

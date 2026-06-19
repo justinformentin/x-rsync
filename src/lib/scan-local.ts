@@ -1,9 +1,9 @@
+import { createHash } from 'crypto';
 import fs from 'fs';
+import { minimatch } from 'minimatch';
 import path from 'path';
 import { pipeline } from 'stream/promises';
-import { createHash } from 'crypto';
-import { minimatch } from 'minimatch';
-import { Manifest, FileEntry } from '../types.js';
+import type { FileEntry, Manifest } from '../types.js';
 
 type ShouldIncludeArgs = { include?: string[]; exclude?: string[] };
 

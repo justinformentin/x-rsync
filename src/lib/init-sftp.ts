@@ -1,6 +1,6 @@
 import fs from 'fs';
 import SFTPClient from 'ssh2-sftp-client';
-import { type Logger } from '../logger';
+import type { Logger } from '../logger';
 
 type InitSftpArgs = {
   host: string;

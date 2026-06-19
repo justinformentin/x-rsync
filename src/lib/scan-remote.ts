@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import SFTPClient from 'ssh2-sftp-client';
-import { Manifest, FileEntry } from '../types.js';
+import type SFTPClient from 'ssh2-sftp-client';
+import type { FileEntry, Manifest } from '../types.js';
 
 // Hash a remote file by downloading it into memory once
 export async function hashRemoteFile(

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { sync } from './sync.js';
+import { loadConfig, mergeConfig } from './lib/config.js';
 import { pull } from './pull.js';
 import { push } from './push.js';
-import { loadConfig, mergeConfig } from './lib/config.js';
+import { sync } from './sync.js';
 
 const program = new Command();
 
