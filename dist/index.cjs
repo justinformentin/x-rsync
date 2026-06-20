@@ -234,11 +234,13 @@ async function pull(options, internal) {
     const showProgress = progress && !options.quiet;
     let bar;
     if (showProgress) {
+      const prevManifest = await loadManifest(manifestPath);
+      const initialTotal = prevManifest ? Object.keys(prevManifest.files).length : 1;
       bar = new import_cli_progress.default.SingleBar(
         { format: "Scanning [{bar}] {value}/{total} files | {file}" },
         import_cli_progress.default.Presets.shades_classic
       );
-      bar.start(1, 0, { file: "" });
+      bar.start(initialTotal, 0, { file: "" });
     }
     const onProgress = bar ? (hashed, discovered, file) => {
       bar.setTotal(discovered);

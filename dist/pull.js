@@ -3,7 +3,7 @@
 import cliProgress from 'cli-progress';
 import path from 'path';
 import { initSftp } from './lib/init-sftp.js';
-import { saveManifest } from './lib/manifest.js';
+import { loadManifest, saveManifest } from './lib/manifest.js';
 import { scanRemoteDirectory } from './lib/scan-remote.js';
 import { Logger } from './logger.js';
 export async function pull(options, internal) {
@@ -22,8 +22,12 @@ export async function pull(options, internal) {
         const showProgress = progress && !options.quiet;
         let bar;
         if (showProgress) {
+            const prevManifest = await loadManifest(manifestPath);
+            const initialTotal = prevManifest
+                ? Object.keys(prevManifest.files).length
+                : 1;
             bar = new cliProgress.SingleBar({ format: 'Scanning [{bar}] {value}/{total} files | {file}' }, cliProgress.Presets.shades_classic);
-            bar.start(1, 0, { file: '' });
+            bar.start(initialTotal, 0, { file: '' });
         }
         const onProgress = bar
             ? (hashed, discovered, file) => {
