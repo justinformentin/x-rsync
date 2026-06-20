@@ -1,6 +1,6 @@
 {
 	"name": "x-rsync",
-	"version": "0.2.2",
+	"version": "0.2.3",
 	"description": "A tiny rsync-style tool using SFTP + SHA-256 diffing. Push only changed files to remote servers.",
 	"keywords": [
 		"sftp",
@@ -41,6 +41,9 @@
 	"scripts": {
 		"build": "node scripts/build.js",
 		"prepublishOnly": "npm run build",
+		"publish:patch": "bash scripts/publish.sh patch",
+		"publish:minor": "bash scripts/publish.sh minor",
+		"publish:major": "bash scripts/publish.sh major",
 		"lint": "biome check .",
 		"lint:fix": "biome check . --write",
 		"fmt": "prettier . --write"
