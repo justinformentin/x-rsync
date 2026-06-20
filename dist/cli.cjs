@@ -3664,21 +3664,30 @@ async function pull(options, internal) {
   try {
     const showProgress = progress && !options.quiet;
     let bar;
+    let barTotal = 1;
     if (showProgress) {
       const prevManifest = await loadManifest(manifestPath);
-      const initialTotal = prevManifest ? Object.keys(prevManifest.files).length : 1;
+      barTotal = prevManifest ? Object.keys(prevManifest.files).length : 1;
       bar = new import_cli_progress.default.SingleBar(
         { format: "Scanning [{bar}] {value}/{total} files | {file}" },
         import_cli_progress.default.Presets.shades_classic
       );
-      bar.start(initialTotal, 0, { file: "" });
+      bar.start(barTotal, 0, { file: "" });
     }
     const onProgress = bar ? (hashed, discovered, file) => {
-      bar.setTotal(discovered);
+      if (discovered > barTotal) {
+        barTotal = discovered;
+        bar.setTotal(barTotal);
+      }
       bar.update(hashed, { file });
     } : void 0;
     const manifest = await scanRemoteDirectory(sftp, remoteDir, onProgress);
-    bar?.stop();
+    if (bar) {
+      const finalCount = Object.keys(manifest.files).length;
+      bar.setTotal(finalCount);
+      bar.update(finalCount);
+      bar.stop();
+    }
     logger.info(
       `Pull: found ${Object.keys(manifest.files).length} files on remote.`
     );
