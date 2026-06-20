@@ -1,6 +1,6 @@
 {
 	"name": "x-rsync",
-	"version": "0.2.3",
+	"version": "0.2.5",
 	"description": "A tiny rsync-style tool using SFTP + SHA-256 diffing. Push only changed files to remote servers.",
 	"keywords": [
 		"sftp",
