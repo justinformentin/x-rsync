@@ -25,6 +25,7 @@ npm publish
 
 echo "Tagging and pushing to git..."
 git add package.json
+git add package-lock.json
 git commit -m "Build and release $VERSION"
 git tag "v$VERSION"
 git push
