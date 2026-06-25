@@ -8,7 +8,7 @@ const program = new Command();
 program
     .name('x-rsync')
     .description('A tiny rsync-style tool using SFTP + SHA-256 diffing')
-    .version("0.2.6")
+    .version("0.2.7")
     .addHelpText('after', `
 Configuration:
   Create xsync.config.js or xsync.config.ts in your project root with:
