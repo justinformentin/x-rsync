@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
+const { version } = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
 
 // Clean dist directory
 console.log('Cleaning dist directory...');
@@ -24,14 +25,16 @@ try {
   process.exit(1);
 }
 
-// Add shebang to ESM CLI file (TypeScript strips it during compilation)
-console.log('Adding shebang to ESM CLI...');
+// Add shebang to ESM CLI file and inject version (TypeScript strips both during compilation)
+console.log('Adding shebang and injecting version into ESM CLI...');
 const cliJs = path.join(distDir, 'cli.js');
 if (fs.existsSync(cliJs)) {
-  const content = fs.readFileSync(cliJs, 'utf8');
+  let content = fs.readFileSync(cliJs, 'utf8');
+  content = content.replace(/\b__CLI_VERSION__\b/g, JSON.stringify(version));
   if (!content.startsWith('#!')) {
-    fs.writeFileSync(cliJs, `#!/usr/bin/env node\n${content}`);
+    content = `#!/usr/bin/env node\n${content}`;
   }
+  fs.writeFileSync(cliJs, content);
 }
 
 // External dependencies (not bundled)
@@ -46,6 +49,7 @@ const cjsOptions = {
   format: 'cjs',
   external,
   sourcemap: false,
+  define: { __CLI_VERSION__: JSON.stringify(version) },
 };
 
 await Promise.all([

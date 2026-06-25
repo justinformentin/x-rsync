@@ -5,12 +5,14 @@ import { pull } from './pull.js';
 import { push } from './push.js';
 import { sync } from './sync.js';
 
+declare const __CLI_VERSION__: string;
+
 const program = new Command();
 
 program
   .name('x-rsync')
   .description('A tiny rsync-style tool using SFTP + SHA-256 diffing')
-  .version('0.1.1')
+  .version(__CLI_VERSION__)
   .addHelpText(
     'after',
     `
