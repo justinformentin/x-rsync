@@ -7,9 +7,9 @@ Works on **Windows, macOS, and Linux**.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🚀 **Three simple commands**
+- **Three simple commands**
   - `sync` - Pull remote state + push local changes (one command to rule them all)
   - `pull` - Download remote file list and create/update manifest
   - `push` - Upload only changed files based on manifest
